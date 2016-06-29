@@ -17,7 +17,7 @@ setup(
             maya = mmmaya.launcher:main
         ''',
         'appinit.maya': '''
-            100_mm_drive_mapping = mmmaya.drivemapping:setup
+            100_mm_dirmap = mmmaya.dirmap:setup
         ''',
     },
 
