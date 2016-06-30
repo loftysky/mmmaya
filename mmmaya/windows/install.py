@@ -7,6 +7,7 @@ if sys.platform != 'win32':
 	if not (os.environ.get('MMMAYA_WINDOWS_FORCE') or raw_input('Continue? (yes/no): ').strip().lower().startswith('y')):
 		exit(1)
 
+# We can use ~ here, because it is not in Maya.
 dir_ = os.path.expanduser('~/Documents/maya/scripts')
 if not os.path.exists(dir_):
 	os.makedirs(dir_)
