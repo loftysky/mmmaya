@@ -1,0 +1,4 @@
+- windows bootstrap:
+	
+	mayapy -c 'import urllib, sys; exec(urllib.urlopen(sys.argv[1]).read())' http://10.10.1.60/pipeline/mmmaya/raw/master/mmmaya/windows/install.py
+

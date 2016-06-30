@@ -2,6 +2,7 @@ import urllib
 import sys
 import os
 
+
 def mmmaya_windows_setup():
 
 	if sys.platform != 'win32' and not os.environ.get('MMMAYA_WINDOWS_FORCE'):
