@@ -27,3 +27,6 @@ def mmmaya_windows_setup():
 
 mmmaya_windows_setup()
 
+
+def mmmaya_check():
+	print '[mmmaya.windows] WARING: Bootstrap did not load.'
