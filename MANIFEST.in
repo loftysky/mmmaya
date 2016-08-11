@@ -1,0 +1,3 @@
+recursive-include mmmaya/art *.png
+recursive-include mmmaya/shelves *.yml
+

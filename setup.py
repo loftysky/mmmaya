@@ -7,6 +7,7 @@ setup(
     url='http://github.com/mmpipeline/mmmaya',
     
     packages=find_packages(exclude=['build*', 'tests*']),
+    include_package_data=True,
     
     author='Mike Boers',
     author_email='mmmaya@mikeboers.com',
