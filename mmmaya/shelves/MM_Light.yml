@@ -1,0 +1,5 @@
+image: fatcow/broom.png
+label: Scrub MentalRay
+entrypoint: mmmaya.mentalray:scrub_scene
+imageOverlayLabel: "scrub\nMR"
+

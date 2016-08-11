@@ -1,4 +1,13 @@
 - windows bootstrap:
 	
-	mayapy -c 'import urllib, sys; exec(urllib.urlopen(sys.argv[1]).read())' http://10.10.1.60/pipeline/mmmaya/raw/master/mmmaya/windows/install.py
+	PowerShell:
 
+		mayapy -c 'import urllib, sys; exec(urllib.urlopen(sys.argv[1]).read())' http://10.10.1.60/pipeline/mmmaya/raw/master/mmmaya/windows/install.py
+
+	WITHIN MAYA:
+
+		import urllib, sys; exec(urllib.urlopen('http://10.10.1.60/pipeline/mmmaya/raw/master/mmmaya/windows/install.py').read())
+
+	VERIFY AFTER STARTUP:
+
+		print cmds.dirmap(getAllMappings=True)

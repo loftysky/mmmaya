@@ -1,0 +1,10 @@
+image: fatcow/bomb.png
+label: Throw Error
+entrypoint: mmmaya.shelves:bomb_button
+imageOverlayLabel: error
+
+---
+image: fatcow/arrow_refresh.png
+label: Reload Shelves
+entrypoint: mmmaya.shelves:refresh_button
+imageOverlayLabel: reload

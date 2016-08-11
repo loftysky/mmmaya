@@ -19,6 +19,9 @@ setup(
         'appinit.maya': '''
             100_mm_dirmap = mmmaya.dirmap:setup
         ''',
+        'appinit.maya.gui': '''
+            500_mm_shelves = mmmaya.shelves:setup_gui
+        ''',
     },
 
     classifiers=[
