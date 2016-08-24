@@ -9,8 +9,9 @@ def main(render=False, python=False):
 	import argparse
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-b', '--background', action='store_true')
+	parser.set_defaults(background=False, python=python, render=render)
 	if not (render or python):
+		parser.add_argument('-b', '--background', action='store_true')
 		parser.add_argument('-p', '--python', action='store_true')
 		parser.add_argument('-R', '--render', action='store_true')
 	args, more_args = parser.parse_known_args()
@@ -20,7 +21,7 @@ def main(render=False, python=False):
 		print >> sys.stderr, 'Could not find Maya 2016'
 		exit(1)
 
-	if render or args.render:
+	if args.render:
 		command = app.get_command()
 		dir_, name = os.path.split(command[-1])
 		command[-1] = os.path.join(dir_, 'Render')
@@ -42,7 +43,7 @@ def main(render=False, python=False):
 	app.exec_(more_args,
 		command=command,
 		env=env,
-		python=python or args.python,
+		python=args.python,
 		background=args.background,
 	)
 
