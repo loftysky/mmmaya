@@ -16,6 +16,7 @@ setup(
     entry_points={
         'console_scripts': '''
             maya = mmmaya.launcher:main
+            Render = mmmaya.launcher:main_render
         ''',
         'appinit.maya': '''
             100_mm_dirmap = mmmaya.dirmap:setup
