@@ -16,6 +16,7 @@ setup(
     entry_points={
         'console_scripts': '''
             maya = mmmaya.launcher:main
+            mayapy = mmmaya.launcher:main_python
             Render = mmmaya.launcher:main_render
         ''',
         'appinit.maya': '''
