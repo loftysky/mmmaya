@@ -8,9 +8,12 @@ def main(render=False, python=False):
 
 	import argparse
 
+	# This is a bad hack to detect if we are running under Deadline's MayaBatch plugin.
+	deadline_batch_plugin = '-prompt' in sys.argv
+
 	parser = argparse.ArgumentParser()
 	parser.set_defaults(background=False, python=python, render=render)
-	if not (render or python):
+	if not (render or python or deadline_batch_plugin):
 		parser.add_argument('-b', '--background', action='store_true')
 		parser.add_argument('-p', '--python', action='store_true')
 		parser.add_argument('-R', '--render', action='store_true')
