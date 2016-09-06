@@ -1,20 +1,29 @@
 ---
-image: fatcow/brick_go.png
+image: publishes/publish.png
 label: Publish Scene
 entrypoint: sgpublish.mayatools.publish_scene:run
-imageOverlayLabel: PUB
+#imageOverlayLabel: PUB
 
 ---
-image: fatcow/brick_link.png
+image: publishes/reference.png
 label: Reference Publish
 entrypoint: sgpublish.mayatools.create_reference:run
-imageOverlayLabel: REF
+#imageOverlayLabel: REF
 
 ---
-image: fatcow/brick_link.png
+image: publishes/check_deps_unknown.png
 label: Update References
 entrypoint: sgpublish.mayatools.update_references:run
-imageOverlayLabel: CHK
+#imageOverlayLabel: CHK
+
+# ---
+# image: publishes/copy_to_work_area.png
+# label: Update References
+# entrypoint: sgpublish.mayatools.copy_to_work_area:run
+#imageOverlayLabel: CHK
+
+---
+include: _spacer.yml
 
 ---
 image: fatcow/bomb.png

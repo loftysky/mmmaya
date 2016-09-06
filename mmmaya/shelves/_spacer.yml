@@ -1,0 +1,4 @@
+---
+width: 1 # Maya will expand to the width of the image.
+image: spacer.png
+enable: false
