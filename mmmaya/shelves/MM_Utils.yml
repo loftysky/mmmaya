@@ -5,6 +5,18 @@ entrypoint: sgpublish.mayatools.publish_scene:run
 imageOverlayLabel: PUB
 
 ---
+image: fatcow/brick_link.png
+label: Reference Publish
+entrypoint: sgpublish.mayatools.create_reference:run
+imageOverlayLabel: REF
+
+---
+image: fatcow/brick_link.png
+label: Update References
+entrypoint: sgpublish.mayatools.update_references:run
+imageOverlayLabel: CHK
+
+---
 image: fatcow/bomb.png
 label: Throw Error
 entrypoint: mmmaya.shelves:bomb_button
