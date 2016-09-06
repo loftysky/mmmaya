@@ -1,3 +1,10 @@
+---
+image: fatcow/brick_go.png
+label: Publish Scene
+entrypoint: sgpublish.mayatools.publish_scene:run
+imageOverlayLabel: PUB
+
+---
 image: fatcow/bomb.png
 label: Throw Error
 entrypoint: mmmaya.shelves:bomb_button
