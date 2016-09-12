@@ -42,7 +42,13 @@ def main(render=False, python=False):
 	# like accidentally sending arbitrary information.
 	env['MAYA_DISABLE_CER'] = '1'
 
-
+	# Put Maya's site-packages at the front of the PYTHONPATH. This should
+	# likely end up in appinit, but I'm not sure if I want to do that yet.
+	env['PYTHONPATH'] = '%s:%s' % (
+		app.get_site_packages(),
+		env.get('PYTHONPATH', ''),
+	)
+	
 	app.exec_(more_args,
 		command=command,
 		env=env,
