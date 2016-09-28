@@ -1,4 +1,5 @@
 import os
+import sys
 
 from mayatools.shelf import load as _load
 

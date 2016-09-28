@@ -22,6 +22,17 @@ include: _spacer.yml
 
 
 ---
+image: fatcow/disk_multiple.png
+label: Save Scene
+entrypoint: sgfs.ui.scene_name.maya:run
+imageOverlayLabel: save
+
+
+---
+include: _spacer.yml
+
+
+---
 image: publishes/publish.png
 label: Publish Scene
 entrypoint: sgpublish.mayatools.publish_scene:run
@@ -39,10 +50,10 @@ label: Update References
 entrypoint: sgpublish.mayatools.update_references:run
 #imageOverlayLabel: CHK
 
-# ---
-# image: publishes/copy_to_work_area.png
-# label: Update References
-# entrypoint: sgpublish.mayatools.copy_to_work_area:run
+---
+image: publishes/copy_to_work_area.png
+label: Copy to Project Workspace
+entrypoint: sgpublish.mayatools.copy_to_work_area:run
 #imageOverlayLabel: CHK
 
 ---

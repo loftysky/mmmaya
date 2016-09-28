@@ -1,0 +1,69 @@
+---
+annotation: Incremental Save
+entrypoint: ks.maya.tools.version_up:version_up
+image: save++_icon.xpm
+reload: true
+
+---
+annotation: (Re)Name Scene
+entrypoint: sgfs.ui.scene_name.maya:run
+image: keySaveFile.xpm
+
+---
+annotation: Set project from file name
+entrypoint: ks.maya.auto_set_project:auto_set_project
+doubleclick: 
+    entrypoint: sgfs.maya.workspace:pick_workspace
+image: PrjtSet.xpm
+
+---
+annotation: Shotgun Page
+image: shotgun.png
+entrypoint: sgfs.maya.workspace:open_parent_in_shotgun
+
+---
+annotation: Playblast Manager
+image: playblast_manager.png
+python: |
+    import playblast_manager
+    w = playblast_manager.setup()
+
+---
+annotation: Jump to Project Folder
+image: fatcow/folder_go.png
+python: |
+    from metatools.imports import autoreload
+    from ks.core.project import filebrowser
+    import maya.cmds as cmds
+    autoreload(filebrowser)
+    project = cmds.workspace(q=True, rd=True)
+    filebrowser.launch_filebrowser(project)
+
+---
+include: _spacer.yml
+
+---
+annotation: Publish Scene
+entrypoint: sgpublish.mayatools.publish_scene:run
+image: publishes/publish.png
+
+---
+annotation: Reference A Publish
+entrypoint: sgpublish.mayatools.create_reference:run
+image: publishes/reference.png
+
+---
+annotation: Copy A Publish
+entrypoint: sgpublish.mayatools.copy_to_work_area:run
+image: publishes/copy_to_work_area.png
+
+---
+annotation: Check References
+entrypoint: sgpublish.mayatools.update_references:run
+
+# It will be changed from "unknown" by thhe background checker.
+image: publishes/check_deps_unknown.png
+
+---
+include: _spacer.yml
+
