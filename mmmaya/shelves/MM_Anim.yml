@@ -1,0 +1,11 @@
+include: _common.yml
+
+---
+include: _spacer.yml
+
+---
+image: fatcow/clock_edit.png
+label: Set Framerate
+entrypoint: mayatools.units.ui:run
+imageOverlayLabel: "FPS"
+

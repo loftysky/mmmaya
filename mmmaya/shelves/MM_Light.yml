@@ -1,3 +1,9 @@
+include: _common.yml
+
+---
+include: _spacer.yml
+
+---
 image: fatcow/broom.png
 label: Scrub MentalRay
 entrypoint: mmmaya.mentalray:scrub_scene
