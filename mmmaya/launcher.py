@@ -2,6 +2,7 @@ import os
 import sys
 
 from appinit.apps.core import iter_installed_apps
+import sitetools.environ
 
 
 def main(render=False, python=False):
@@ -32,6 +33,14 @@ def main(render=False, python=False):
 		command = None
 
 	env = os.environ.copy()
+
+	# Preserve the envvars for outside of the Maya environment.
+	sitetools.environ.freeze(env, [
+		'LD_LIBRARY_PATH',
+		'DYLD_LIBRARY_PATH',
+		'PYTHONPATH',
+		'PYTHONHOME',
+	])
 
 	# Disable the Autodesk "Customer Involvement Program", because it segfaults
 	# when running on the farm (e.g. Deadline or Qube), and because the concept
