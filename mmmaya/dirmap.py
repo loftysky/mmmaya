@@ -7,11 +7,15 @@ def setup():
 
 		# Windows to Linux.
 		('K:/', '/Volumes/CGroot'),
+                ('Y:/', '/Volumes/PD01'),
 		('Z:/', '/Volumes/AnimationProjects'),
 
 		# Old and new (July 4th) Miao Miao.
 		('//10.10.1.3/AnimationProjects', '/Volumes/AnimationProjects'),
 		('//10.10.1.5/AnimationProjects', '/Volumes/AnimationProjects'),
+
+                # SitG: Mike's home to studio.
+                ('/Volumes/heap/sitg/work/markmedia', '/Volumes/CGroot/Projects/SitG'),
 
 	]:
 		print '[mmmaya.dirmap]     Mapping %s to %s' % (src, dst)
