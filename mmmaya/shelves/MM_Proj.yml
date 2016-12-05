@@ -1,0 +1,11 @@
+include: _common.yml
+
+---
+include: _spacer.yml
+
+---
+image: fatcow/tower.png
+label: Render Set Up
+entrypoint: mmproject52x2.ui:run
+imageOverlayLabel: "Render"
+
