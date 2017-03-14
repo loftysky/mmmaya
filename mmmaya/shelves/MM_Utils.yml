@@ -14,3 +14,10 @@ image: fatcow/arrow_refresh.png
 label: Reload Shelves
 entrypoint: mmmaya.shelves:refresh_button
 imageOverlayLabel: reload
+
+---
+
+image: fatcow/screen_error.png
+label: Terminal running Maya
+entrypoint: mayatools.terminal.terminal:run
+imageOverlayLabel: "Which Terminal"
