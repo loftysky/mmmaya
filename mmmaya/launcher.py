@@ -4,6 +4,9 @@ import sys
 from appinit.apps.core import iter_installed_apps
 import sitetools.environ
 
+from . import renderman
+from .utils import Environ
+
 
 def main(render=False, python=False):
 
@@ -20,9 +23,11 @@ def main(render=False, python=False):
 		parser.add_argument('-R', '--render', action='store_true')
 	args, more_args = parser.parse_known_args()
 
-	app = next(iter_installed_apps('maya==2016'), None)
+	version = os.environ.get('MM_MAYA_VERSION', '2016')
+
+	app = next(iter_installed_apps('maya==%s' % version), None)
 	if not app:
-		print >> sys.stderr, 'Could not find Maya 2016'
+		print >> sys.stderr, 'Could not find Maya', version
 		exit(1)
 
 	if args.render:
@@ -32,7 +37,7 @@ def main(render=False, python=False):
 	else:
 		command = None
 
-	env = os.environ.copy()
+	env = Environ(os.environ)
 
 	# Preserve the envvars for outside of the Maya environment.
 	sitetools.environ.freeze(env, [
@@ -58,6 +63,8 @@ def main(render=False, python=False):
 		env.get('PYTHONPATH', ''),
 	)
 	
+	renderman.setup_env(version, env)
+
 	app.exec_(more_args,
 		command=command,
 		env=env,
