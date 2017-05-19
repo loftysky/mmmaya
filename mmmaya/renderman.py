@@ -1,11 +1,16 @@
-import os
 import logging
+import os
+import sys
+
 
 log = logging.getLogger(__name__)
 
 
-def setup_env(maya_version, env):
+def find_license(env=None):
 
+    lic_path = env and env.get('PIXAR_LICENSE_FILE')
+    if lic_path and os.path.exists(lic_path):
+        return lic_path
 
     # Lets go looking for RenderMan.
     for lic_dir in (
@@ -17,10 +22,14 @@ def setup_env(maya_version, env):
         lic_path = os.path.join(lic_dir, 'pixar.license')
         if os.path.exists(lic_path):
             log.info('Using license: %s', lic_path)
-            break
-    else:
-        return
+            return lic_path
 
+
+def setup_env(maya_version, env):
+
+    lic_path = find_license(env)
+    if not lic_path:
+        return
 
     rman_version = os.environ.get('MM_RENDERMAN_VERSION', '21.4')
     rms_slug = 'RenderManForMaya-%s-maya%s' % (rman_version, maya_version)
@@ -53,5 +62,5 @@ def setup_env(maya_version, env):
     env.append('MAYA_SCRIPT_PATH', os.path.join(rms_tree, 'scripts')) # MEL for bootstrapping second load.
     env.append('PYTHONPATH', os.path.join(rms_tree, 'scripts')) # I thought this would be taken care of already...
     env.append('MAYA_RENDER_DESC_PATH', os.path.join(rms_tree, 'etc')) # For `Render -r rman`.
-    env.append('XBMLANGPATH', os.path.join(rms_tree, 'icons')) # For shelf icons.
+    env.append('XBMLANGPATH', os.path.join(rms_tree, 'icons') + ('/%B' if sys.platform.startswith('linux') else '')) # For shelf icons.
 
