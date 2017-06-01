@@ -26,6 +26,13 @@ setup(
             500_mm_shelves = mmmaya.shelves:setup_gui
         ''',
     },
+    
+    metatools_scripts={
+        'mmmaya-inspect': {
+            'entrypoint': 'mmmaya.inspect:main',
+            'interpreter': 'mayapy',
+        }
+    },
 
     classifiers=[
         'Intended Audience :: Developers',
