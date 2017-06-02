@@ -1,11 +1,42 @@
 import os
+import shutil
 import sys
+import tempfile
 
 from appinit.apps.core import iter_installed_apps
 import sitetools.environ
 
 from . import renderman
 from .utils import Environ
+
+
+def mktemp_app_dir(version):
+	"""Build a minimal version of the user's MAYA_APP_DIR.
+	
+	The caller should delete it once done.
+
+	We do this at all because we are having a pile of segfaults on the farm
+	due to being unable to load something within `synColor` in the MAYA_APP_DIR.
+	So lets just relocate it.
+
+	"""
+
+	version = str(version)
+	new = tempfile.mkdtemp('maya_app_dir')
+	new = os.path.join(new, version)
+	os.makedirs(new)
+
+	if sys.platform.startswith('linux'):
+		old = os.path.expanduser('~/maya')
+	else:
+		old = os.path.expanduser('~/Library/Preferences/Autodesk/maya')
+	old = os.path.join(old, version)
+
+	env_path = os.path.join(old, 'Maya.env')
+	if os.path.exists(env_path):
+		shutil.copy(env_path, os.path.join(new, 'Maya.env'))
+
+	return new
 
 
 def main(render=False, python=False):
@@ -65,12 +96,22 @@ def main(render=False, python=False):
 	
 	renderman.setup_env(version, env)
 
-	app.exec_(more_args,
-		command=command,
-		env=env,
-		python=args.python,
-		background=args.background,
-	)
+	if args.render:
+		app_dir = mktemp_app_dir(version) # We need a clean MAYA_APP_DIR.
+		try:
+			env['MAYA_APP_DIR'] = app_dir
+			proc = app.popen(more_args, command=command, env=env)
+			proc.wait()
+		finally:
+			shutil.rmtree(app_dir)
+
+	else:
+		app.exec_(more_args,
+			command=command,
+			env=env,
+			python=args.python,
+			background=args.background,
+		)
 
 
 def main_render():
