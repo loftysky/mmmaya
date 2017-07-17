@@ -22,21 +22,24 @@ def mktemp_app_dir(version):
 	"""
 
 	version = str(version)
-	new = tempfile.mkdtemp('maya_app_dir')
-	new = os.path.join(new, version)
-	os.makedirs(new)
+	root = tempfile.mkdtemp('maya_app_dir')
+	new = os.path.join(root, 'maya')
 
 	if sys.platform.startswith('linux'):
 		old = os.path.expanduser('~/maya')
 	else:
 		old = os.path.expanduser('~/Library/Preferences/Autodesk/maya')
-	old = os.path.join(old, version)
 
-	env_path = os.path.join(old, 'Maya.env')
-	if os.path.exists(env_path):
-		shutil.copy(env_path, os.path.join(new, 'Maya.env'))
+	shutil.copytree(old, new, ignore=shutil.ignore_patterns(
+		'FBX',
+		'mayaLog', # Junk.
+		'mayaRenderLog.txt', # Junk.
+		'presets', # Sometimes heavy.
+		'projects', # Sometimes heavy.
+		'synColor', # The important one.
+	))
 
-	return new
+	return root, new
 
 
 def main(render=False, python=False):
@@ -94,18 +97,16 @@ def main(render=False, python=False):
 		env.get('PYTHONPATH', ''),
 	)
 	
-	# TODO: Include this without breaking MAYA_PLUG_IN_PATH for redshift.
-	if int(os.environ.get('MMMAYA_RENDERMAN', 0)):
-		renderman.setup_env(version, env)
+	renderman.setup_env(version, env)
 
 	if args.render:
-		app_dir = mktemp_app_dir(version) # We need a clean MAYA_APP_DIR.
+		tmp_root, app_dir = mktemp_app_dir(version) # We need a clean MAYA_APP_DIR.
 		try:
 			env['MAYA_APP_DIR'] = app_dir
 			proc = app.popen(more_args, command=command, env=env)
 			proc.wait()
 		finally:
-			shutil.rmtree(app_dir)
+			shutil.rmtree(tmp_root)
 
 	else:
 		app.exec_(more_args,
