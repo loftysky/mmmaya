@@ -94,7 +94,9 @@ def main(render=False, python=False):
 		env.get('PYTHONPATH', ''),
 	)
 	
-	renderman.setup_env(version, env)
+	# TODO: Include this without breaking MAYA_PLUG_IN_PATH for redshift.
+	if int(os.environ.get('MMMAYA_RENDERMAN', 0)):
+		renderman.setup_env(version, env)
 
 	if args.render:
 		app_dir = mktemp_app_dir(version) # We need a clean MAYA_APP_DIR.
