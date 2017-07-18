@@ -11,114 +11,126 @@ from .utils import Environ
 
 
 def mktemp_app_dir(version):
-	"""Build a minimal version of the user's MAYA_APP_DIR.
-	
-	The caller should delete it once done.
+    """Build a minimal version of the user's MAYA_APP_DIR.
+    
+    The caller should delete it once done.
 
-	We do this at all because we are having a pile of segfaults on the farm
-	due to being unable to load something within `synColor` in the MAYA_APP_DIR.
-	So lets just relocate it.
+    We do this at all because we are having a pile of segfaults on the farm
+    due to being unable to load something within `synColor` in the MAYA_APP_DIR.
+    So lets just relocate it.
 
-	"""
+    """
 
-	version = str(version)
-	root = tempfile.mkdtemp('maya_app_dir')
-	new = os.path.join(root, 'maya')
+    version = str(version)
+    root = tempfile.mkdtemp('maya_app_dir')
+    new = os.path.join(root, 'maya')
 
-	if sys.platform.startswith('linux'):
-		old = os.path.expanduser('~/maya')
-	else:
-		old = os.path.expanduser('~/Library/Preferences/Autodesk/maya')
+    if sys.platform.startswith('linux'):
+        old = os.path.expanduser('~/maya')
+    else:
+        old = os.path.expanduser('~/Library/Preferences/Autodesk/maya')
 
-	shutil.copytree(old, new, ignore=shutil.ignore_patterns(
-		'FBX',
-		'mayaLog', # Junk.
-		'mayaRenderLog.txt', # Junk.
-		'presets', # Sometimes heavy.
-		'projects', # Sometimes heavy.
-		'synColor', # The important one.
-	))
+    try:
+        shutil.copytree(old, new, ignore=shutil.ignore_patterns(
+            'FBX',
+            'mayaLog', # Junk.
+            'mayaRenderLog.txt', # Junk.
+            'presets', # Sometimes heavy.
+            'projects', # Sometimes heavy.
+            'synColor', # The important one.
+        ))
+    except shutil.Error as e:
+        errs = e.args[0]
+        print >> sys.stderr, "There were {} errors while creating MAYA_APP_DIR:".format(len(errs))
+        for src, dst, why in errs:
+            print >> sys.stderr, '{}\n\tsrc: {}\n\tdst: {}'.format(why, src, dst)
 
-	return root, new
+    return root, new
 
 
 def main(render=False, python=False):
 
-	import argparse
+    import argparse
 
-	# This is a bad hack to detect if we are running under Deadline's MayaBatch plugin.
-	deadline_batch_plugin = '-prompt' in sys.argv
+    # This is a bad hack to detect if we are running under Deadline's MayaBatch plugin.
+    deadline_batch_plugin = '-prompt' in sys.argv
 
-	parser = argparse.ArgumentParser(add_help=not (render or python))
-	parser.set_defaults(background=False, python=python, render=render)
-	if not (render or python or deadline_batch_plugin):
-		parser.add_argument('-b', '--background', action='store_true')
-		parser.add_argument('-p', '--python', action='store_true')
-		parser.add_argument('-R', '--render', action='store_true')
-	args, more_args = parser.parse_known_args()
+    parser = argparse.ArgumentParser(add_help=not (render or python))
+    parser.set_defaults(background=False, python=python, render=render)
+    if not (render or python or deadline_batch_plugin):
+        parser.add_argument('-b', '--background', action='store_true')
+        parser.add_argument('-p', '--python', action='store_true')
+        parser.add_argument('-R', '--render', action='store_true')
+    args, more_args = parser.parse_known_args()
 
-	version = os.environ.get('MM_MAYA_VERSION', '2016')
+    version = os.environ.get('MM_MAYA_VERSION', '2016')
 
-	app = next(iter_installed_apps('maya==%s' % version), None)
-	if not app:
-		print >> sys.stderr, 'Could not find Maya', version
-		exit(1)
+    app = next(iter_installed_apps('maya==%s' % version), None)
+    if not app:
+        print >> sys.stderr, 'Could not find Maya', version
+        exit(1)
 
-	if args.render:
-		command = app.get_command()
-		dir_, name = os.path.split(command[-1])
-		command[-1] = os.path.join(dir_, 'Render')
-	else:
-		command = None
+    if args.render:
+        command = app.get_command()
+        dir_, name = os.path.split(command[-1])
+        command[-1] = os.path.join(dir_, 'Render')
+    else:
+        command = None
 
-	env = Environ(os.environ)
+    env = Environ(os.environ)
 
-	# Preserve the envvars for outside of the Maya environment.
-	sitetools.environ.freeze(env, [
-		'LD_LIBRARY_PATH',
-		'DYLD_LIBRARY_PATH',
-		'PYTHONPATH',
-		'PYTHONHOME',
-	])
+    # Preserve the envvars for outside of the Maya environment.
+    sitetools.environ.freeze(env, [
+        'LD_LIBRARY_PATH',
+        'DYLD_LIBRARY_PATH',
+        'PYTHONPATH',
+        'PYTHONHOME',
+    ])
 
-	# Disable the Autodesk "Customer Involvement Program", because it segfaults
-	# when running on the farm (e.g. Deadline or Qube), and because the concept
-	# is somewhat obnoxious.
-	env['MAYA_DISABLE_CIP'] = '1'
+    # Disable the Autodesk "Customer Involvement Program", because it segfaults
+    # when running on the farm (e.g. Deadline or Qube), and because the concept
+    # is somewhat obnoxious.
+    env['MAYA_DISABLE_CIP'] = '1'
 
-	# Lets also disable the "Customer Error Reporting", because I don't feel
-	# like accidentally sending arbitrary information.
-	env['MAYA_DISABLE_CER'] = '1'
+    # Lets also disable the "Customer Error Reporting", because I don't feel
+    # like accidentally sending arbitrary information.
+    env['MAYA_DISABLE_CER'] = '1'
 
-	# Put Maya's site-packages at the front of the PYTHONPATH. This should
-	# likely end up in appinit, but I'm not sure if I want to do that yet.
-	env['PYTHONPATH'] = '%s:%s' % (
-		app.get_site_packages(),
-		env.get('PYTHONPATH', ''),
-	)
-	
-	renderman.setup_env(version, env)
+    # Put Maya's site-packages at the front of the PYTHONPATH. This should
+    # likely end up in appinit, but I'm not sure if I want to do that yet.
+    env['PYTHONPATH'] = '%s:%s' % (
+        app.get_site_packages(),
+        env.get('PYTHONPATH', ''),
+    )
 
-	if args.render:
-		tmp_root, app_dir = mktemp_app_dir(version) # We need a clean MAYA_APP_DIR.
-		try:
-			env['MAYA_APP_DIR'] = app_dir
-			proc = app.popen(more_args, command=command, env=env)
-			proc.wait()
-		finally:
-			shutil.rmtree(tmp_root)
+    # Include our mel.
+    #env['MAYA_SCRIPT_PATH'] = '%s:%s' % (
+    #    env.get('MAYA_SCRIPT_PATH', ''),
+    #    os.path.abspath(os.path.join(__file__, '..', 'mel')),
+    #)
+    
+    renderman.setup_env(version, env)
 
-	else:
-		app.exec_(more_args,
-			command=command,
-			env=env,
-			python=args.python,
-			background=args.background,
-		)
+    if args.render:
+        tmp_root, app_dir = mktemp_app_dir(version) # We need a clean MAYA_APP_DIR.
+        try:
+            env['MAYA_APP_DIR'] = app_dir
+            proc = app.popen(more_args, command=command, env=env)
+            proc.wait()
+        finally:
+            shutil.rmtree(tmp_root)
+
+    else:
+        app.exec_(more_args,
+            command=command,
+            env=env,
+            python=args.python,
+            background=args.background,
+        )
 
 
 def main_render():
-	main(render=True)
+    main(render=True)
 
 def main_python():
-	main(python=True)
+    main(python=True)
