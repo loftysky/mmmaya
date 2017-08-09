@@ -15,9 +15,13 @@ setup(
     
     entry_points={
         'console_scripts': '''
+        
             maya = mmmaya.launcher:main
             mayapy = mmmaya.launcher:main_python
             Render = mmmaya.launcher:main_render
+
+            mmmaya-redshift = mmmaya.redshift:main
+
         ''',
         'appinit.maya': '''
             100_mm_dirmap = mmmaya.dirmap:setup
