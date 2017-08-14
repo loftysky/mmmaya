@@ -5,7 +5,7 @@ def setup():
     print '[mmmaya.dirmap] Setting up dirmaps:'
     for src, dst in [
 
-        # Windows to Linux.
+        # Original (pre-Linux) Windows to Linux.
         ('K:/', '/Volumes/CGroot'),
         ('Y:/', '/Volumes/PD01'),
         ('Z:/', '/Volumes/AnimationProjects'),
@@ -14,9 +14,13 @@ def setup():
         ('//10.10.1.3/AnimationProjects', '/Volumes/AnimationProjects'),
         ('//10.10.1.5/AnimationProjects', '/Volumes/AnimationProjects'),
 
+        # Modern (Shed projects) Windows to Linux.
+        ('U:/', '/Volumes/CGroot'),
+
         # SitG: Mike's home to studio.
-        ('/Volumes/heap/sitg/work/markmedia', '/Volumes/CGroot/Projects/SitG'), # Old.
-        ('/Volumes/heap/sitg/work/film',      '/Volumes/CGroot/Projects/SitG'), # Current.
+        ('/Volumes/heap/sitg/work/markmedia',      '/Volumes/CGroot/Projects/SitG'), # Old.
+        ('/Volumes/heap/sitg/work/film',           '/Volumes/CGroot/Projects/SitG'), # Current.
+        ('/Volumes/heap/sitg/work/artifacts-film', '/Volumes/CGartifacts/Projects/SitG'), # Current artifacts.
 
     ]:
         print '[mmmaya.dirmap]     Mapping %s to %s' % (src, dst)
