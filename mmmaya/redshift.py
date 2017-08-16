@@ -28,7 +28,7 @@ def target(args, gpu, queue):
                 '-s', start,
                 '-e', end,
             ]
-            for name in 'rd', 'proj', 'x', 'y', 'im', 'cam', 'rl':
+            for name in 'rd', 'proj', 'x', 'y', 'im', 'cam', 'rl', 'skipExistingFrames':
                 value = getattr(args, name, None)
                 if value is not None:
                     cmd.extend(('-' + name, value))
@@ -78,6 +78,7 @@ def main():
     parser.add_argument('-im', default="<Scene>/<RenderLayer>")
     parser.add_argument('-cam', help="Camera")
     parser.add_argument('-rl', help="Render Layer")
+    parser.add_argument('-skipExistingFrames')
 
     parser.add_argument('scene')
     args = parser.parse_args()
