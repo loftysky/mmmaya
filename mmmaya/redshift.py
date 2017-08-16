@@ -9,7 +9,6 @@ from farmsoup.range import Range
 from sgfs import SGFS
 
 
-NUM_GPUS = 8
 
 def target(args, gpu, queue):
 
@@ -29,7 +28,7 @@ def target(args, gpu, queue):
                 '-s', start,
                 '-e', end,
             ]
-            for name in 'rd', 'proj', 'x', 'y', 'im', 'cam':
+            for name in 'rd', 'proj', 'x', 'y', 'im', 'cam', 'rl':
                 value = getattr(args, name, None)
                 if value is not None:
                     cmd.extend(('-' + name, value))
@@ -66,7 +65,9 @@ def main():
 
     parser.add_argument('-s', type=int, required=True, help="Start frame")
     parser.add_argument('-e', type=int, required=True, help="End frame")
+
     parser.add_argument('-c', type=int, default=5, help="Chunk size")
+    parser.add_argument('-g', '--gpus', type=int, default=8, help="Number of GPUs")
 
     parser.add_argument('-rd')
     parser.add_argument('-proj')
@@ -101,7 +102,7 @@ def main():
 
     queue = Queue()
     threads = []
-    for gpu in xrange(NUM_GPUS):
+    for gpu in xrange(args.gpus):
         thread = threading.Thread(target=target, args=(args, gpu, queue))
         thread.start()
         threads.append(thread)
