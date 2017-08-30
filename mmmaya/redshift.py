@@ -6,8 +6,33 @@ import threading
 import traceback
 
 from farmsoup.range import Range
+from farmsoup.utils import shell_quote
 from sgfs import SGFS
 
+
+
+def get_command(args, start, end, gpu, shell=False):
+
+    cmd = ['Render',
+        '-r', 'redshift',
+        # These are purposefully not shell_quote-ed!
+        '-gpu', '{%s}' % gpu,
+        '-s', start,
+        '-e', end,
+    ]
+
+    for name in 'rd', 'proj', 'x', 'y', 'im', 'cam', 'rl', 'skipExistingFrames':
+        value = getattr(args, name, None)
+        if value is not None:
+            if shell:
+                value = shell_quote(str(value))
+            cmd.extend(('-' + name, value))
+
+    cmd.append(shell_quote(args.scene) if shell else args.scene)
+
+    cmd = [str(x) for x in cmd]
+
+    return cmd
 
 
 def target(args, gpu, queue):
@@ -22,20 +47,8 @@ def target(args, gpu, queue):
                 return
             start, end = x
 
-            cmd = ['Render',
-                '-r', 'redshift',
-                '-gpu', '{%d}' % gpu,
-                '-s', start,
-                '-e', end,
-            ]
-            for name in 'rd', 'proj', 'x', 'y', 'im', 'cam', 'rl', 'skipExistingFrames':
-                value = getattr(args, name, None)
-                if value is not None:
-                    cmd.extend(('-' + name, value))
+            cmd = get_command(args, start, end, gpu)
 
-            cmd.append(args.scene)
-
-            cmd = [str(x) for x in cmd]
             if args.verbose:
                 print 'Starting {}-{} on GPU {}: {}'.format(start, end, gpu, ' '.join(cmd))
             if not args.dry_run:
@@ -63,11 +76,15 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-n', '--dry-run', action='store_true')
 
-    parser.add_argument('-s', type=int, required=True, help="Start frame")
-    parser.add_argument('-e', type=int, required=True, help="End frame")
+    parser.add_argument('-s', '--start', type=int, required=True, help="Start frame")
+    parser.add_argument('-e', '--end', type=int, required=True, help="End frame")
 
-    parser.add_argument('-c', type=int, default=5, help="Chunk size")
-    parser.add_argument('-g', '--gpus', type=int, default=8, help="Number of GPUs")
+    local_group = parser.add_argument_group('Local settings')
+    local_group.add_argument('-c', '--chunk', type=int, default=5, help="Chunk size")
+    local_group.add_argument('-g', '--gpus', metavar='N_GPUS', type=int, default=8, help="Number of local GPUs")
+
+    farm_group = parser.add_argument_group('Farm settings')
+    farm_group.add_argument('-f', '--farm', action='store_true', help="Render on Farmsoup")
 
     parser.add_argument('-rd')
     parser.add_argument('-proj')
@@ -78,7 +95,7 @@ def main():
     parser.add_argument('-im', default="<Scene>/<RenderLayer>")
     parser.add_argument('-cam', help="Camera")
     parser.add_argument('-rl', help="Render Layer")
-    parser.add_argument('-skipExistingFrames')
+    parser.add_argument('-skipExistingFrames', metavar='0_or_1')
 
     parser.add_argument('scene')
     args = parser.parse_args()
@@ -98,6 +115,45 @@ def main():
         task_dir = sgfs.path_for_entity(task)
         args.rd = args.rd or os.path.join(task_dir, 'maya', 'images')
         args.proj = args.proj or os.path.join(task_dir, 'maya', 'scenes')
+
+    if args.farm:
+        main_farm(args)
+    else:
+        main_local(args)
+
+
+def main_farm(args):
+
+    render_cmd = get_command(args, '$F', '$F_end', '$FARMSOUP_RESERVED_GPUS_TOKENS', shell=True)
+
+    name = [
+        'mmmaya-redshift',
+        os.path.splitext(os.path.basename(args.scene))[0],
+    ]
+    for attr in 'cam', 'rl':
+        value = getattr(args, attr, None)
+        if value:
+            name.append(value)
+    name = ' :: '.join(name)
+
+    cmd = [
+        'farmsoup',
+        'submit',
+        '--name', name,
+        '--reservations', 'cpus=1,redshift=1,gpus=1',
+        '--priority', '99', # Just to be a little higher than the normal Maya jobs.
+        '--range', 'F={}-{}/{}'.format(args.start, args.end, args.chunk),
+        '--shell',
+        'hostname\nenv | grep FARMSOUP | sort\n' + ' '.join(render_cmd),
+    ]
+
+    if args.verbose:
+        print '$', ' '.join(cmd)
+    if not args.dry_run:
+        os.execvp(cmd[0], cmd)
+
+
+def main_local(args):
 
     range_ = Range('{}-{}/{}'.format(args.s, args.e, args.c))
 
