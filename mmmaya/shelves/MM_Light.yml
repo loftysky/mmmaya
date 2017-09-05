@@ -9,3 +9,17 @@ label: Scrub MentalRay
 entrypoint: mmmaya.mentalray:scrub_scene
 imageOverlayLabel: "scrub\nMR"
 
+
+---
+include: _spacer.yml
+---
+image: fatcow/brick_link.png
+label: Link Alembic
+imageOverlayLabel: "link\nABC"
+entrypoint: mmmaya.abc.link:link_button
+---
+image: fatcow/brick_link.png
+label: Unlink Alembic
+imageOverlayLabel: "unlink\nABC"
+entrypoint: mmmaya.abc.link:unlink_button
+
