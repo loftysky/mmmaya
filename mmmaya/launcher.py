@@ -6,6 +6,8 @@ import tempfile
 from appinit.apps.core import iter_installed_apps
 import sitetools.environ
 
+import mmmayaplugins as plugins
+
 from . import renderman
 from .utils import Environ
 
@@ -98,17 +100,16 @@ def main(render=False, python=False):
 
     # Put Maya's site-packages at the front of the PYTHONPATH. This should
     # likely end up in appinit, but I'm not sure if I want to do that yet.
-    env['PYTHONPATH'] = '%s:%s' % (
-        app.get_site_packages(),
-        env.get('PYTHONPATH', ''),
-    )
+    env.prepend('PYTHONPATH', app.get_site_packages())
 
     # Include our mel.
     #env['MAYA_SCRIPT_PATH'] = '%s:%s' % (
     #    env.get('MAYA_SCRIPT_PATH', ''),
     #    os.path.abspath(os.path.join(__file__, '..', 'mel')),
     #)
-    
+
+    env.append('MAYA_PLUG_IN_PATH', plugins.get_plugin_path(version))
+
     renderman.setup_env(version, env)
 
     if args.render:
