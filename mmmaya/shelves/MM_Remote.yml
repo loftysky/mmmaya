@@ -1,0 +1,24 @@
+include: _common.yml
+
+---
+include: _spacer.yml
+
+---
+image: fatcow/broom.png
+label: Make offline copies
+entrypoint: "mmmaya.remote:make_offline_copies"
+imageOverlayLabel: "Copy\nOffline"
+
+
+---
+image: fatcow/broom.png
+label: Go offline
+entrypoint: "mmmaya.remote:go_offline"
+imageOverlayLabel: "Go\nOffline"
+
+
+---
+image: fatcow/broom.png
+label: Go online
+entrypoint: "mmmaya.remote:go_online"
+imageOverlayLabel: "Go\nOnline"

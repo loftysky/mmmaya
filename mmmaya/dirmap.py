@@ -14,6 +14,10 @@ def setup():
         ('//10.10.1.3/AnimationProjects', '/Volumes/AnimationProjects'),
         ('//10.10.1.5/AnimationProjects', '/Volumes/AnimationProjects'),
 
+        # File from remote users should normalize back.
+        ('/Volumes/CGroot.offline', '/Volumes/CGroot'),
+        ('/Volumes/CGroot.online', '/Volumes/CGroot'),
+
         # Modern (Shed projects) Windows to Linux.
         ('U:/', '/Volumes/CGroot'),
 
