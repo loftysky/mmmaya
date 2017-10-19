@@ -15,8 +15,10 @@ def setup():
         ('//10.10.1.5/AnimationProjects', '/Volumes/AnimationProjects'),
 
         # File from remote users should normalize back.
-        ('/Volumes/CGroot.offline', '/Volumes/CGroot'),
-        ('/Volumes/CGroot.online', '/Volumes/CGroot'),
+        for name in 'CGroot', 'CGartifacts':
+            ('/Volumes/{}.offline'.format(name), '/Volumes/{}'.format(name)),
+            ('/Volumes/offline/{}'.format(name), '/Volumes/{}'.format(name)),
+            ('/Volumes/{}.online'.format(name),  '/Volumes/{}'.format(name)),
 
         # Modern (Shed projects) Windows to Linux.
         ('U:/', '/Volumes/CGroot'),

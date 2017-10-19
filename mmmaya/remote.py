@@ -16,16 +16,32 @@ file_node_attributes = (
 )
 
 
-to_online = DirMap({
-    '/Volumes/CGroot'        : '/Volumes/CGroot.online',
-    '/Volumes/CGroot.offline': '/Volumes/CGroot.online',
+to_online = {}
+to_offline = {}
 
-})
-to_offline = DirMap({
-    '/Volumes/CGroot'       : '/Volumes/CGroot.offline',
-    '/Volumes/CGroot.online': '/Volumes/CGroot.offline',
-})
+volume_names = ('CGroot', 'CGartifacts', 'EDsource')
+for name in volume_names:
 
+    bare = '/Volumes/{}'.format(name)
+    online = '/Volumes/{}.online'.format(name)
+
+    # Pick which style of offline we're using.
+    offline_boot = '/Volumes/{}.offline'.format(name)
+    offline_disk = '/Volumes/offline/{}'.format(name)
+    if os.path.exists(offline_disk):
+        offline = offline_disk
+    else:
+        offline = offline_boot
+
+    to_online[bare] = online
+    to_online[offline_boot] = online
+    to_online[offline_disk] = online
+
+    to_offline[bare] = offline
+    to_offline[online] = offline
+
+to_online = DirMap(to_online)
+to_offline = DirMap(to_offline)
 
 
 def make_offline_copies():
@@ -48,7 +64,7 @@ def make_offline_copies():
                 continue
 
             offline = to_offline(raw_path)
-            if os.path.exists(offline):
+            if offline == online or os.path.exists(offline):
                 continue
 
             dir_ = os.path.dirname(offline)
@@ -64,30 +80,28 @@ def make_offline_copies():
                 raise
 
 
-def go_neutral(volume='CGroot'):
-    base = os.path.join('/Volumes', volume)
-    for ext in '', '.offline', '.online':
-        src = base + ext
-        dst = cmds.dirmap(getMappedDirectory=src)
-        if dst:
-            print 'Unmapping {} -> {}'.format(src, dst)
+def install_dirmap(map_):
+    for src, dst in sorted(map_.iteritems()):
+        print 'Mapping', src, '->', dst
+        existing = cmds.dirmap(getMappedDirectory=src)
+        if existing and existing != dst:
+            print '    was', existing
             cmds.dirmap(unmapDirectory=src)
+        cmds.dirmap(mapDirectory=(src, dst))
 
+def go_neutral():
+    for map_ in (to_online, to_offline):
+        for src in sorted(map_):
+            dst = cmds.dirmap(getMappedDirectory=src)
+            if dst:
+                print 'Unmapping {} -> {}'.format(src, dst)
+                cmds.dirmap(unmapDirectory=src)
 
 def go_online():
-    for name in 'CGroot', 'CGartifacts', 'EDsource':
-        volume = os.path.join('/Volumes', name)
-        go_neutral(volume)
-        cmds.dirmap(mapDirectory=(volume, volume + '.online'))
-        cmds.dirmap(mapDirectory=(volume + '.offline', volume + '.online'))
+    install_dirmap(to_online)
     print 'Please reopen the scene!'
 
-
 def go_offline():
-    for name in 'CGroot', 'CGartifacts', 'EDsource':
-        volume = os.path.join('/Volumes', name)
-        go_neutral(volume)
-        cmds.dirmap(mapDirectory=(volume, volume + '.offline'))
-        cmds.dirmap(mapDirectory=(volume + '.online', volume + '.offline'))
+    install_dirmap(to_offline)
     print 'Please reopen the scene!'
 
