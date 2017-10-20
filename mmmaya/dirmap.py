@@ -3,7 +3,8 @@ from maya import cmds
 
 def setup():
     print '[mmmaya.dirmap] Setting up dirmaps:'
-    for src, dst in [
+    
+    to_map = [
 
         # Original (pre-Linux) Windows to Linux.
         ('K:/', '/Volumes/CGroot'),
@@ -14,12 +15,6 @@ def setup():
         ('//10.10.1.3/AnimationProjects', '/Volumes/AnimationProjects'),
         ('//10.10.1.5/AnimationProjects', '/Volumes/AnimationProjects'),
 
-        # File from remote users should normalize back.
-        for name in 'CGroot', 'CGartifacts':
-            ('/Volumes/{}.offline'.format(name), '/Volumes/{}'.format(name)),
-            ('/Volumes/offline/{}'.format(name), '/Volumes/{}'.format(name)),
-            ('/Volumes/{}.online'.format(name),  '/Volumes/{}'.format(name)),
-
         # Modern (Shed projects) Windows to Linux.
         ('U:/', '/Volumes/CGroot'),
 
@@ -28,7 +23,17 @@ def setup():
         ('/Volumes/heap/sitg/work/film',           '/Volumes/CGroot/Projects/SitG'), # Current.
         ('/Volumes/heap/sitg/work/artifacts-film', '/Volumes/CGartifacts/Projects/SitG'), # Current artifacts.
 
-    ]:
+    ]
+
+    # File from remote users should normalize back.
+    for name in 'CGroot', 'CGartifacts':
+        to_map.extend((
+            ('/Volumes/{}.offline'.format(name), '/Volumes/{}'.format(name)),
+            ('/Volumes/offline/{}'.format(name), '/Volumes/{}'.format(name)),
+            ('/Volumes/{}.online'.format(name),  '/Volumes/{}'.format(name)),
+        ))
+
+    for src, dst in to_map:
         print '[mmmaya.dirmap]     Mapping %s to %s' % (src, dst)
         cmds.dirmap(m=(src, dst))
        
