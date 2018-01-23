@@ -117,9 +117,10 @@ def main(render=False, python=False):
         try:
             env['MAYA_APP_DIR'] = app_dir
             proc = app.popen(more_args, command=command, env=env)
-            proc.wait()
+            code = proc.wait()
         finally:
             shutil.rmtree(tmp_root)
+        exit(code)
 
     else:
         app.exec_(more_args,
