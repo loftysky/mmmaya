@@ -50,7 +50,7 @@ def mktemp_app_dir(version):
     return root, new
 
 
-def main(render=False, python=False):
+def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2016')):
 
     import argparse
 
@@ -59,17 +59,17 @@ def main(render=False, python=False):
 
     parser = argparse.ArgumentParser(add_help=not (render or python))
     parser.set_defaults(background=False, python=python, render=render)
+    parser.add_argument('-V', '--version', default=version)
+
     if not (render or python or deadline_batch_plugin):
         parser.add_argument('-b', '--background', action='store_true')
         parser.add_argument('-p', '--python', action='store_true')
         parser.add_argument('-R', '--render', action='store_true')
     args, more_args = parser.parse_known_args()
 
-    version = os.environ.get('MM_MAYA_VERSION', '2016')
-
-    app = next(iter_installed_apps('maya==%s' % version), None)
+    app = next(iter_installed_apps('maya==%s' % args.version), None)
     if not app:
-        print >> sys.stderr, 'Could not find Maya', version
+        print >> sys.stderr, 'Could not find Maya', args.version
         exit(1)
 
     if args.render:
