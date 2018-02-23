@@ -60,6 +60,7 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
     parser = argparse.ArgumentParser(add_help=not (render or python))
     parser.set_defaults(background=False, python=python, render=render)
     parser.add_argument('-V', '--version', default=version)
+    parser.add_argument('-e', '--dump-environ', action='store_true')
 
     if not (render or python or deadline_batch_plugin):
         parser.add_argument('-b', '--background', action='store_true')
@@ -102,6 +103,13 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
     # likely end up in appinit, but I'm not sure if I want to do that yet.
     env.prepend('PYTHONPATH', app.get_site_packages())
 
+    # We have PySide installed, which messes with PySide2.
+    # This is a hack until we can deal with this via other means (as macOS
+    # also has this problem, but that PySide is installed via VEE).
+    if int(args.version[:4]) >= 2018:
+        env.remove('PYTHONPATH', '/usr/lib64/python2.7/site-packages', strict=False)
+        env.remove('PYTHONPATH', '/usr/lib/python2.7/site-packages', strict=False)
+
     # Include our mel.
     #env['MAYA_SCRIPT_PATH'] = '%s:%s' % (
     #    env.get('MAYA_SCRIPT_PATH', ''),
@@ -111,6 +119,11 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
     env.append('MAYA_PLUG_IN_PATH', plugins.get_plugin_path(version))
 
     renderman.setup_env(version, env)
+
+    if args.dump_environ:
+        for k, v in sorted(env.iteritems()):
+            print '{}={}'.format(k, v)
+        return
 
     if args.render:
         tmp_root, app_dir = mktemp_app_dir(version) # We need a clean MAYA_APP_DIR.
@@ -136,3 +149,9 @@ def main_render():
 
 def main_python():
     main(python=True)
+
+
+if __name__ == '__main__':
+    main()
+
+

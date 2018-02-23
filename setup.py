@@ -32,10 +32,15 @@ setup(
     },
     
     metatools_scripts={
+
         'mmmaya-inspect': {
             'entrypoint': 'mmmaya.inspect:main',
             'interpreter': 'mayapy',
-        }
+        },
+
+        'maya2016': {'entrypoint': 'mmmaya.launcher:main', 'kwargs': dict(version='2016')},
+        'maya2018': {'entrypoint': 'mmmaya.launcher:main', 'kwargs': dict(version='2018')},
+
     },
 
     classifiers=[
