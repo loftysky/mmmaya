@@ -8,9 +8,6 @@ import pkg_resources
 from appinit.apps.core import iter_installed_apps
 import sitetools.environ
 
-import mmmayaplugins as plugins
-
-from . import renderman
 from .utils import Environ
 
 
@@ -118,13 +115,9 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
     #    os.path.abspath(os.path.join(__file__, '..', 'mel')),
     #)
 
-    env.append('MAYA_PLUG_IN_PATH', plugins.get_plugin_path(version))
-
-    renderman.setup_env(version, env)
-
     for ep in pkg_resources.iter_entry_points('mmmaya_prelaunch'):
         func = ep.load()
-        func(env)
+        func(env, version)
 
     if args.dump_environ:
         for k, v in sorted(env.iteritems()):

@@ -29,6 +29,9 @@ setup(
         'appinit.maya.gui': '''
             500_mm_shelves = mmmaya.shelves:setup_gui
         ''',
+        'mmmaya_prelaunch': '''
+            mmmaya_renderman = mmmaya.renderman:setup_env
+        ''',
     },
     
     metatools_scripts={

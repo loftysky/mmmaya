@@ -25,7 +25,7 @@ def find_license(env=None):
             return lic_path
 
 
-def setup_env(maya_version, env):
+def setup_env(env, maya_version):
 
     lic_path = find_license(env)
     if not lic_path:
