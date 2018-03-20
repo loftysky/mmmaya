@@ -1,6 +1,8 @@
 import os
 import sys
 
+import pkg_resources
+
 from mayatools.shelf import load as _load
 
 from maya import cmds
@@ -15,8 +17,18 @@ def load_shelf():
 def _load_shelf():
     shelf_dir = os.path.abspath(os.path.join(__file__, '..'))
     image_dir = os.path.abspath(os.path.join(__file__, '..', '..', 'art', 'icons'))
-    print 'Loading shelves from', shelf_dir
-    _load(shelf_dir, image_roots=[image_dir])
+
+    shelf_dirs = [shelf_dir]
+    image_dirs = [image_dir]
+
+    for ep in pkg_resources.iter_entry_points('mmmaya_shelves'):
+        func = ep.load()
+        func(shelf_dirs, image_dirs)
+
+    print "Loading shelves from:"
+    print '\n'.join('    ' + x for x in shelf_dirs)
+
+    _load(shelf_dirs, image_dirs)
 
 
 
