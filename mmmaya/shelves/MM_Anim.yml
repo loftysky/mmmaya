@@ -8,3 +8,8 @@ image: fatcow/clock_edit.png
 label: Set Framerate
 entrypoint: mayatools.units.ui:run
 imageOverlayLabel: "FPS"
+
+---
+image: plugins/studiolibrary.png
+label: Studio Library
+python: import studiolibrary; studiolibrary.main()
