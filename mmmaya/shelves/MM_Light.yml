@@ -23,3 +23,12 @@ label: Unlink Alembic
 imageOverlayLabel: "unlink\nABC"
 entrypoint: mmmaya.abc.link:unlink_button
 
+
+---
+include: _spacer.yml
+
+---
+image: farmsoup.png
+label: Submit to FarmSoup
+imageOverlayLabel: SUB
+entrypoint: mmmaya.render.submit_gui:open_window
