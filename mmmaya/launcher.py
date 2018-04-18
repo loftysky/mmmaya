@@ -59,12 +59,12 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
     parser = argparse.ArgumentParser(add_help=not (render or python))
     parser.set_defaults(background=False, python=python, render=render)
     parser.add_argument('-V', '--version', default=version)
-    parser.add_argument('-e', '--dump-environ', action='store_true')
+    parser.add_argument('--dump-environ', action='store_true')
 
     if not (render or python or deadline_batch_plugin):
-        parser.add_argument('-b', '--background', action='store_true')
-        parser.add_argument('-p', '--python', action='store_true')
-        parser.add_argument('-R', '--render', action='store_true')
+        parser.add_argument('--background', action='store_true')
+        parser.add_argument('--python', action='store_true')
+        parser.add_argument('--render', action='store_true')
     args, more_args = parser.parse_known_args()
 
     app = next(iter_installed_apps('maya==%s' % args.version), None)
