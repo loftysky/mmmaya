@@ -34,11 +34,17 @@ class SubmitDialog(Q.Widgets.Dialog):
         for cam in self._job.cameras:
             self._camera.addItem(cam)
 
+        scrollArea = Q.ScrollArea()
+        scrollWidget = Q.QWidget()
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setWidget(scrollWidget)
         layers = Q.VBoxLayout()
-        layout.addRow("Layers:", layers)
+        scrollWidget.setLayout(layers)
+        layout.addRow("Layers:", scrollArea)
 
         self._layers = []
-        for layer, on in sorted(self._job.layers.items()):
+        for layer in reversed(self._job.layer_names):
+            on = self._job.layers[layer]
             box = Q.CheckBox(layer)
             if on:
                 box.setChecked(True)

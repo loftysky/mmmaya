@@ -24,8 +24,9 @@ class RenderJob(object):
                 self.cameras.append(cam)
         self.camera = self.cameras[-1]
 
+        self.layer_names = sorted(cmds.ls(type='renderLayer'), key=lambda l: cmds.getAttr(l + '.displayOrder'))
         self.layers = {}
-        for layer in cmds.ls(type='renderLayer'):
+        for layer in self.layer_names:
             self.layers[layer] = cmds.getAttr(layer + '.renderable')
 
         self.start_frame = cmds.getAttr('defaultRenderGlobals.startFrame')
