@@ -1,0 +1,31 @@
+include: _common.yml
+
+---
+include: _spacer.yml
+
+---
+image: fatcow/clock_edit.png
+label: Merge as Instances
+entrypoint: mmmaya.instances:merge_as_instances_button
+imageOverlayLabel: "merge"
+
+
+---
+image: fatcow/clock_edit.png
+label: Select All Instances
+entrypoint: mmmaya.instances:select_all_instances_button
+imageOverlayLabel: "select"
+
+
+---
+image: fatcow/clock_edit.png
+label: De-Instance
+entrypoint: mmmaya.instances:deinstance
+imageOverlayLabel: "de-inst"
+
+
+---
+image: fatcow/clock_edit.png
+label: Re-Instance
+entrypoint: mmmaya.instances:reinstance
+imageOverlayLabel: "re-inst"
