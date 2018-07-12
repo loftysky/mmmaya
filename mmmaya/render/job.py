@@ -157,7 +157,7 @@ class RenderJob(object):
                     scene=scene_name,
                     layer=layer,
                     camera=camera,
-                )
+                ).replace(':', '__')
                 dir_, basename = os.path.split(fullname)
 
                 dir_ = os.path.join(self.output_directory, dir_) if dir_ else self.output_directory

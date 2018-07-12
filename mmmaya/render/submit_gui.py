@@ -34,12 +34,6 @@ class SubmitDialog(Q.Widgets.Dialog):
         self._name = Q.LineEdit(self._job.name)
         layout.addRow("Job Name:", self._name)
 
-        self._camera = Q.ComboBox()
-        layout.addRow("Camera:", self._camera)
-        for cam in self._job.cameras:
-            self._camera.addItem(cam)
-
-
         scrollArea = Q.ScrollArea()
         scrollWidget = Q.QWidget()
         scrollArea.setWidgetResizable(True)
@@ -243,6 +237,8 @@ class SubmitDialog(Q.Widgets.Dialog):
             layer=layer,
         )
 
+        example = example.replace(':', '__')
+        
         self._nameExample.setText('<i><code><small>{}.####.ext</small></code></i>'.format(example))
 
     def _on_outputDirectoryBrowse_clicked(self):
