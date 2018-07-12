@@ -149,12 +149,12 @@ class RenderJob(object):
                 if not include_layer:
                     continue
 
-                name = self.filename_pattern.format(
+                fullname = self.filename_pattern.format(
                     scene=scene_name,
                     layer=layer,
                     camera=camera,
                 )
-                dir_, basename = os.path.split(name)
+                dir_, basename = os.path.split(fullname)
 
                 dir_ = os.path.join(self.output_directory, dir_) if dir_ else self.output_directory
                 
@@ -176,7 +176,7 @@ class RenderJob(object):
                 
                 if is_farmsoup:
                     job = group.job(
-                        name='{}/{}'.format(layer, camera),
+                        name=fullname,
                         reservations=reservations,
                     ).setup_as_subprocess(args)
                     job.expand_via_range('F={}-{}/{}'.format(self.start_frame, self.end_frame, self.frame_chunk))
