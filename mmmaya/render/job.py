@@ -1,3 +1,4 @@
+import errno
 import os
 
 import farmsoup.client
@@ -11,12 +12,12 @@ class RenderJob(object):
 
     def __init__(self):
 
-        renderer_node = cmds.getAttr('defaultRenderGlobals.currentRenderer')
-        self.renderer = cmds.renderer(renderer_node, q=True, rendererUIName=True)
+        self.renderer_node = cmds.getAttr('defaultRenderGlobals.currentRenderer')
+        self.renderer = cmds.renderer(self.renderer_node, q=True, rendererUIName=True)
 
         path = cmds.file(q=True, sceneName=True) or 'Untitled'
         name = os.path.splitext(os.path.basename(path))[0]
-        self.name = 'Maya Render ({}): {}'.format(self.renderer, name)
+        self.name = 'Maya Render ({}): {}'.format(self.renderer_node, name)
 
         self.cameras = []
         for cam in cmds.ls(type='camera'):
@@ -36,7 +37,17 @@ class RenderJob(object):
         self.width = cmds.getAttr('defaultResolution.width')
         self.height = cmds.getAttr('defaultResolution.height')
 
-        self.output_directory = None
+        self.filename_pattern = '{layer},{camera}/{scene},{layer},{camera}'
+        self.skip_existing = True
+
+        self.location_method = 'publish'
+        self.output_directory = ''
+
+        self.driver = 'farmsoup'
+
+        # Farmsoup options.
+        self.reserve_renderer = True
+        self.max_workers = 0
 
     def validate(self):
 
@@ -56,77 +67,125 @@ class RenderJob(object):
         if not any(self.layers.values()):
             raise ValueError("At least one layer must be selected.")
 
+        self.driver = self.driver.lower()
+        if self.driver not in ('farmsoup', 'cli'):
+            raise ValueError("Unknown driver.")
+
+        self.location_method = self.location_method.lower()
+        if self.location_method not in ('publish', 'manual'):
+            raise ValueError("Unknown location method.")
+
+        if self.driver == 'cli' and self.location_method != 'manual':
+            raise ValueError("CLI driver can only use manual location.")
+
+        if self.location_method == 'manual' and not self.output_directory:
+            raise ValueError("No output directory given.")
+
     def submit(self):
 
         scene_path = cmds.file(q=True, sceneName=True)
         scene_name = os.path.splitext(os.path.basename(scene_path))[0]
 
-        sgfs = SGFS()
-        tasks = sgfs.entities_from_path(scene_path, ['Task'])
-        if not tasks:
-            raise ValueError("Scene is not saved under a Shotgun Task.")
-        task = tasks[0]
+        if self.location_method == 'publish':
 
-        # TODO: Set a status.
-        # TODO: Pull code, link, description, etc, from user.
-        # TODO: Add metadata about the layers rendered.
-        with sgpublish.Publisher(
-            link=task,
-            type='maya_render',
-            name='Render',
-            lock_permissions=False,
-        ) as publisher:
-            publish_directory = publisher.directory
+            sgfs = SGFS()
+            tasks = sgfs.entities_from_path(scene_path, ['Task'])
+            if not tasks:
+                raise ValueError("Scene is not saved under a Shotgun Task.")
+            task = tasks[0]
 
-            maya_version = cmds.about(version=True)
-            base_args = [
-
-                'Render',
-                '-V', maya_version,
-
-                '-s', '@F',
-                '-e', '@F_end',
-
-                '-cam', self.camera,
-
-                '-x', str(int(self.width)),
-                '-y', str(int(self.height)),
-
-                '-fnc', 'name.#.ext',
-                '-pad', '4',
+            # TODO: Set a status.
+            # TODO: Pull code, link, description, etc, from user.
+            # TODO: Add metadata about the layers rendered.
+            with sgpublish.Publisher(
+                link=task,
+                type='maya_render',
+                name='Render',
+                lock_permissions=False,
+            ) as publisher:
+                self.output_directory = publisher.directory
 
 
-            ]
+        maya_version = cmds.about(version=True)
+        is_farmsoup = self.driver == 'farmsoup'
 
+        base_args = [
+
+            'Render',
+            '-V', maya_version,
+
+            '-s', '@F' if is_farmsoup else str(self.start_frame),
+            '-e', '@F_end' if is_farmsoup else str(self.end_frame),
+
+            '-x', str(int(self.width)),
+            '-y', str(int(self.height)),
+
+            '-fnc', 'name.#.ext',
+            '-pad', '4',
+
+        ]
+
+        if self.skip_existing:
+            base_args.extend(('-skipExistingFrames', 'true'))
+
+        if is_farmsoup:
             client = farmsoup.client.Client()
             group = client.group(
                 name=self.name,
             )
 
+            reservations = {
+                'maya': 1,
+                'maya{}'.format(maya_version): 1,
+            }
+            if self.reserve_renderer:
+                reservations[self.renderer_node] = 1
+
+        for camera in [self.camera]:
             for layer, include in sorted(self.layers.items()):
                 if not include:
                     continue
 
-                render_directory = os.path.join(publish_directory, layer)
-                os.makedirs(render_directory)
+                name = self.filename_pattern.format(
+                    scene=scene_name,
+                    layer=layer,
+                    camera=camera,
+                )
+                dir_, basename = os.path.split(name)
+
+                dir_ = os.path.join(self.output_directory, dir_) if dir_ else self.output_directory
+                
+                if is_farmsoup:
+                    try:
+                        os.makedirs(dir_)
+                    except OSError as e:
+                        if e.errno != errno.EEXIST:
+                            raise
 
                 args = base_args[:]
                 args.extend((
-                    '-im', '{}.{}'.format(scene_name, layer),
+                    '-cam', camera,
                     '-rl', layer,
-                    '-rd', render_directory,
+                    '-rd', dir_,
+                    '-im', basename,
                     scene_path
                 ))
                 
-                job = group.job(
-                    name=layer,
-                    reservations={'maya{}'.format(maya_version): 1},
-                ).setup_as_subprocess(args)
-                job.expand_via_range('F={}-{}/{}'.format(self.start_frame, self.end_frame, self.frame_chunk))
+                if is_farmsoup:
+                    job = group.job(
+                        name='{}/{}'.format(layer, camera),
+                        reservations=reservations,
+                    ).setup_as_subprocess(args)
+                    job.expand_via_range('F={}-{}/{}'.format(self.start_frame, self.end_frame, self.frame_chunk))
+                else:
+                    print ' '.join(args)
 
-            # TODO: Add a job to set the Shotgun status on each once they are done.
 
+        # TODO: Add a job to set the Shotgun status on each once they are done.
+
+        if is_farmsoup:
             client.submit(group)
             return group
+
 
 
