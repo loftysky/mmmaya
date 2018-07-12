@@ -39,6 +39,26 @@ class SubmitDialog(Q.Widgets.Dialog):
         for cam in self._job.cameras:
             self._camera.addItem(cam)
 
+
+        scrollArea = Q.ScrollArea()
+        scrollWidget = Q.QWidget()
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setWidget(scrollWidget)
+        scrollLayout = Q.VBoxLayout()
+        scrollWidget.setLayout(scrollLayout)
+        layout.addRow("Cameras:", scrollArea)
+
+        self._cameras = []
+        for camera in self._job.camera_names:
+            on = self._job.cameras[camera]
+            box = Q.CheckBox(camera)
+            if on:
+                box.setChecked(True)
+            scrollLayout.addWidget(box)
+            self._cameras.append(box)
+
+
+
         scrollArea = Q.ScrollArea()
         scrollWidget = Q.QWidget()
         scrollArea.setWidgetResizable(True)
@@ -202,7 +222,12 @@ class SubmitDialog(Q.Widgets.Dialog):
         scene_path = cmds.file(q=True, sceneName=True)
         scene_name = os.path.splitext(os.path.basename(scene_path))[0] or 'untitled'
 
-        camera = self._camera.currentText()
+        for camera in self._cameras:
+            if camera.isChecked():
+                camera = camera.text()
+                break
+        else:
+            camera = 'NOCAMERA'
         
         for layer in self._layers:
             if layer.isChecked():
@@ -270,7 +295,8 @@ class SubmitDialog(Q.Widgets.Dialog):
     def _on_submit_clicked(self):
 
         self._job.name = self._name.text()
-        self._job.camera = self._camera.currentText()
+        for camera in self._cameras:
+            self._job.cameras[camera.text()] = camera.isChecked()
         for layer in self._layers:
             self._job.layers[layer.text()] = layer.isChecked()
         self._job.start_frame = self._startFrame.value()
@@ -281,7 +307,7 @@ class SubmitDialog(Q.Widgets.Dialog):
 
         self._job.filename_pattern = self._namePattern.currentText()
         self._job.skip_existing = self._skipExisting.isChecked()
-        
+
         self._job.location_method = self._locationTabs.tabText(self._locationTabs.currentIndex())
         self._job.output_directory = self._outputDirectory.text()
 

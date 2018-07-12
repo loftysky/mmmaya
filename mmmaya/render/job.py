@@ -19,11 +19,12 @@ class RenderJob(object):
         name = os.path.splitext(os.path.basename(path))[0]
         self.name = 'Maya Render ({}): {}'.format(self.renderer_node, name)
 
-        self.cameras = []
+        self.camera_names = []
+        self.cameras = {}
         for cam in cmds.ls(type='camera'):
             if cmds.getAttr(cam + '.renderable'):
-                self.cameras.append(cam)
-        self.camera = self.cameras[-1]
+                self.camera_names.append(cam)
+                self.cameras[cam] = 0 if self.cameras else 1
 
         self.layer_names = sorted(cmds.ls(type='renderLayer'), key=lambda l: cmds.getAttr(l + '.displayOrder'))
         self.layers = {}
@@ -141,9 +142,11 @@ class RenderJob(object):
             if self.reserve_renderer:
                 reservations[self.renderer_node] = 1
 
-        for camera in [self.camera]:
-            for layer, include in sorted(self.layers.items()):
-                if not include:
+        for camera, include_camera in sorted(self.cameras.items()):
+            if not include_camera:
+                continue
+            for layer, include_layer in sorted(self.layers.items()):
+                if not include_layer:
                     continue
 
                 name = self.filename_pattern.format(
