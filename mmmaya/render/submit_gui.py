@@ -236,8 +236,7 @@ class SubmitDialog(Q.Widgets.Dialog):
             camera=camera,
             layer=layer,
         )
-
-        example = example.replace(':', '__')
+        example = example.replace(':', '_') # This is what Maya will do.
         
         self._nameExample.setText('<i><code><small>{}.####.ext</small></code></i>'.format(example))
 

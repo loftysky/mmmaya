@@ -21,15 +21,19 @@ class RenderJob(object):
 
         self.camera_names = []
         self.cameras = {}
-        for cam in cmds.ls(type='camera'):
+        for cam in cmds.listCameras(): # This returns transforms if they uniquely ID cameras.
             if cmds.getAttr(cam + '.renderable'):
                 self.camera_names.append(cam)
                 self.cameras[cam] = 0 if self.cameras else 1
 
-        self.layer_names = sorted(cmds.ls(type='renderLayer'), key=lambda l: cmds.getAttr(l + '.displayOrder'))
+        self.layer_names = []
         self.layers = {}
-        for layer in self.layer_names:
-            self.layers[layer] = cmds.getAttr(layer + '.renderable')
+        for layer in sorted(cmds.ls(type='renderLayer'), key=lambda l: cmds.getAttr(l + '.displayOrder')):
+            # Use a name that matches the UI and token replacement behaviour of
+            # the Render command.
+            layer_name = 'masterLayer' if layer == 'defaultRenderLayer' else layer
+            self.layer_names.append(layer_name)
+            self.layers[layer_name] = cmds.getAttr(layer + '.renderable')
 
         self.start_frame = cmds.getAttr('defaultRenderGlobals.startFrame')
         self.end_frame = cmds.getAttr('defaultRenderGlobals.endFrame')
@@ -153,34 +157,33 @@ class RenderJob(object):
                 if not include_layer:
                     continue
 
-                fullname = self.filename_pattern.format(
+                # We need to ask Maya to do the templating for us, because
+                # otherwise it will decide that because there are multiple
+                # render layers that there will be a naming collision, and so
+                # it automatically adds directories for us.
+                template_name = self.filename_pattern.format(
+                    scene=scene_name,
+                    layer='<RenderLayer>',
+                    camera='<Camera>',
+                )
+                display_name = self.filename_pattern.format(
                     scene=scene_name,
                     layer=layer,
                     camera=camera,
-                ).replace(':', '__')
-                dir_, basename = os.path.split(fullname)
-
-                dir_ = os.path.join(self.output_directory, dir_) if dir_ else self.output_directory
-                
-                if is_farmsoup:
-                    try:
-                        os.makedirs(dir_)
-                    except OSError as e:
-                        if e.errno != errno.EEXIST:
-                            raise
+                ).replace(':', '_')
 
                 args = base_args[:]
                 args.extend((
                     '-cam', camera,
                     '-rl', layer,
-                    '-rd', dir_,
-                    '-im', basename,
+                    '-rd', self.output_directory,
+                    '-im', template_name,
                     scene_path
                 ))
                 
                 if is_farmsoup:
                     job = group.job(
-                        name=fullname,
+                        name=display_name,
                         reservations=reservations,
                     ).setup_as_subprocess(args)
                     job.expand_via_range('F={}-{}/{}'.format(self.start_frame, self.end_frame, self.frame_chunk))
