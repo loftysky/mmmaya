@@ -49,6 +49,46 @@ def mktemp_app_dir(version):
     return root, new
 
 
+def check_adlm_resource_perms(fix=False):
+    """Assert permissions on AdlmIntRes.xml are correct.
+
+    Autodesk licensing will create a AdlmIntRes.xml temp file
+    that is only readable by the current user, but that file is required
+    for Arnold to license on the farm, AND the error handling in the
+    client is terrible.
+
+    This function checks, and optionally fixes those permissions.
+
+    """
+
+    # Via strace, we found maya.bin in a busy loop checking the file in /usr/tmp.
+    # But /usr/tmp was a symlink to /var/tmp... and we don't mind being overly
+    # cautious here.
+    for tmp_dir in ('/var/tmp', '/usr/tmp', tempfile.gettempdir()):
+
+        if not os.path.exists(tmp_dir):
+            continue
+
+        adlm_xml_path = os.path.join(tmp_dir, 'AdlmIntRes.xml')
+        if os.path.exists(adlm_xml_path):
+            
+            perms = os.stat(adlm_xml_path).st_mode
+            if perms & 0o444 == 0o444:
+                continue
+
+            if fix:
+                try:
+                    os.chmod(adlm_xml_path, 0o666)
+                except OSError as e:
+                    print >> sys.stderr, "[mmmaya.launcher] ERROR: {} could not have its permissions fixed; {}".format(adlm_xml_path, e)
+
+            else:
+                print >> sys.stderr, "[mmmaya.launcher] WARNING: {} has bad permissions (0o{:03o}), and this render may block.".format(
+                    adlm_xml_path,
+                    perms & 0o777,
+                )
+
+
 def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2016')):
 
     import argparse
@@ -126,46 +166,19 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
 
     if args.render:
 
-        # Autodesk licensing will create a AdlmIntRes.xml temp file
-        # that is only readable by the current user, but that file is required
-        # for Arnold to license on the farm, AND the error handling in the
-        # client is terrible. So we're going to make it ourselves, and assert
-        # it is okay.
-        for tmp_dir in ('/var/tmp', '/usr/tmp', tempfile.gettempdir()):
-
-            if not os.path.exists(tmp_dir):
-                continue
-
-            adlm_xml_path = os.path.join(tmp_dir, 'AdlmIntRes.xml')
-            if os.path.exists(adlm_xml_path):
-                perms = os.stat(parm).st_mode
-                if perms & 0o444 != 0o444:
-                    print >> sys.stderr, "[mmmaya.launcher] WARNING: {} has bad permissions (0o{:03o}), and this render may block.".format(
-                        adlm_xml_path,
-                        perms & 0o777,
-                    )
+        check_adlm_resource_perms()
 
         tmp_root, app_dir = mktemp_app_dir(version) # We need a clean MAYA_APP_DIR.
 
         code = 1
         try:
-
             env['MAYA_APP_DIR'] = app_dir
             proc = app.popen(more_args, command=command, env=env)
             code = proc.wait()
-
-            # Clean up the file we tested for above.
-            for tmp_dir in ('/var/tmp', '/usr/tmp', tempfile.gettempdir()):
-                adlm_xml_path = os.path.join(tmp_dir, 'AdlmIntRes.xml')
-                if os.path.exists(adlm_xml_path):
-                    try:
-                        os.unlink(adlm_xml_path)
-                    except OSError as e:
-                        print >> sys.stderr, "[mmmaya.launcher] ERROR: {} could not be removed; {}".format(adlm_xml_path, e)
-
         finally:
             shutil.rmtree(tmp_root)
-
+        
+        check_adlm_resource_perms(fix=True)
         exit(code)
 
     else:
