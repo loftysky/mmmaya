@@ -125,13 +125,47 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
         return
 
     if args.render:
+
+        # Autodesk licensing will create a AdlmIntRes.xml temp file
+        # that is only readable by the current user, but that file is required
+        # for Arnold to license on the farm, AND the error handling in the
+        # client is terrible. So we're going to make it ourselves, and assert
+        # it is okay.
+        for tmp_dir in ('/var/tmp', '/usr/tmp', tempfile.gettempdir()):
+
+            if not os.path.exists(tmp_dir):
+                continue
+
+            adlm_xml_path = os.path.join(tmp_dir, 'AdlmIntRes.xml')
+            if os.path.exists(adlm_xml_path):
+                perms = os.stat(parm).st_mode
+                if perms & 0o444 != 0o444:
+                    print >> sys.stderr, "[mmmaya.launcher] WARNING: {} has bad permissions (0o{:03o}), and this render may block.".format(
+                        adlm_xml_path,
+                        perms & 0o777,
+                    )
+
         tmp_root, app_dir = mktemp_app_dir(version) # We need a clean MAYA_APP_DIR.
+
+        code = 1
         try:
+
             env['MAYA_APP_DIR'] = app_dir
             proc = app.popen(more_args, command=command, env=env)
             code = proc.wait()
+
+            # Clean up the file we tested for above.
+            for tmp_dir in ('/var/tmp', '/usr/tmp', tempfile.gettempdir()):
+                adlm_xml_path = os.path.join(tmp_dir, 'AdlmIntRes.xml')
+                if os.path.exists(adlm_xml_path):
+                    try:
+                        os.unlink(adlm_xml_path)
+                    except OSError as e:
+                        print >> sys.stderr, "[mmmaya.launcher] ERROR: {} could not be removed; {}".format(adlm_xml_path, e)
+
         finally:
             shutil.rmtree(tmp_root)
+
         exit(code)
 
     else:
