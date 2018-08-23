@@ -1,51 +1,45 @@
 
+import maya.cmds as cmds
+
+from sgfs import SGFS
+
 
 def check_ref_namespaces():
-	#written by Kevin Zimny
-	#last updated 2018/08/15
-	#Description : Python script runs through all the references within the maya scenes.
-	#Checks they match the Shotgun defined Maya namespace, and renames
-	#the incorrect namespaces.
 
-	import maya.cmds as cmds
-	from sgfs import SGFS
-	sgfs = SGFS()
+    # Description : Python script runs through all the references within the maya scenes.
+    # Checks they match the Shotgun defined Maya namespace, and renames
+    # the incorrect namespaces.
 
-	SceneReferences = cmds.file(query=True, reference = True) #finds all the reference paths in the scene
-	SceneReferences.sort (reverse = True) #sorts them in reverse
+    sgfs = SGFS()
 
-	for all in SceneReferences:
-	    
-	    #split is to find the duplicate number
-	    DuplicateNumber = all.split("{")
-	    DuplicateNumber = DuplicateNumber[-1].split("}")
-	    
-	    #info to query the maya namespace from the shotgun webpage
-	    path = all
-	    sgfs.entities_from_path(path)
-	    sgfs.entities_from_path(path, ['Asset'])
-	    assets = sgfs.entities_from_path(path, ['Asset'])
-	    asset = assets[0]
-	    asset.get('sg_default_reference_namespace')
-	    
-	    #if statement is to separate the first reference from the duplicates, because the first namespace will 
-	    #respect the maya namespace totally the duplicates will have a suffix "_#"
-	    if all == DuplicateNumber[0]:
-	        
-	        #query curent namespace
-	        CurrentNamespace = cmds.file( path, query=1, namespace=True) 
-	        #query shotgun defined namespace
-	        CorrectNamespace = asset.fetch('sg_default_reference_namespace') 
-	        #renames namespace if it is incorrect
-	        if CurrentNamespace != CorrectNamespace : 
-	            cmds.file( path, edit=1, namespace=CorrectNamespace) 
-	        
-	    else :
-	        
-	        #query curent namespace
-	        CurrentNamespace = cmds.file( path, query=1, namespace=True) 
-	        #query shotgun defined namespace + "_#"
-	        CorrectNamespace = CorrectNamespace = asset.fetch('sg_default_reference_namespace')+"_"+DuplicateNumber[0] 
-	        #renames namespace if it is incorrect
-	        if CurrentNamespace != CorrectNamespace :
-	            cmds.file( path, edit=1, namespace=CorrectNamespace)  
+    scene_references = cmds.file(query=True, reference=True) # finds all the reference paths in the scene
+    scene_references.sort(reverse=True) #sorts them in reverse
+
+    for path in scene_references:
+        
+        #split is to find the duplicate number
+        duplicate_number = path.split("{")
+        duplicate_number = duplicate_number[-1].split("}")
+        
+        #info to query the maya namespace from the shotgun webpage
+        assets = sgfs.entities_from_path(path, ['Asset'])
+        if not assets:
+        	raise ValueError("No Asset entities for {}".format(path))
+        asset = assets[0]
+        
+        #query curent namespace
+        current_namespace = cmds.file(path, query=1, namespace=True) 
+
+        #if statement is to separate the first reference from the duplicates, because the first namespace will 
+        #respect the maya namespace totally the duplicates will have a suffix "_#"
+        if path == duplicate_number[0]:
+            #query shotgun defined namespace
+            correct_namespace = asset.fetch('sg_default_reference_namespace')  
+            
+        else:
+            #query shotgun defined namespace + "_#"
+            correct_namespace = correct_namespace = asset.fetch('sg_default_reference_namespace') + "_" + duplicate_number[0] 
+
+        #renames namespace if it is incorrect
+        if current_namespace != correct_namespace: 
+            cmds.file(path, edit=1, namespace=correct_namespace)
