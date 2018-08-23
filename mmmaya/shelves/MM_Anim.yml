@@ -16,7 +16,7 @@ python: import studiolibrary; studiolibrary.main()
 
 
 ---
-image: fatcow/clock_edit.png
+image: fatcow/icecream.png
 label: Check Ref Namespaces
 entrypoint: mmmaya.references:check_ref_namespaces
-imageOverlayLabel: "CHK REF"
+imageOverlayLabel: "NAMES"
