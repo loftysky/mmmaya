@@ -15,6 +15,18 @@ def check_ref_namespaces():
     scene_references = cmds.file(query=True, reference=True) # finds all the reference paths in the scene
     scene_references.sort(reverse=True) #sorts them in reverse
 
+    for _ in xrange(10):
+        num_fixed = _fix_ref_namespacees(sgfs, scene_references)
+        if not num_fixed:
+            break
+    else:
+        raise ValueError("Could not fix all references after many attempts.")
+
+
+def _fix_ref_namespacees(sgfs, scene_references):
+
+    num_fixed = 0
+
     for path in scene_references:
         
         #split is to find the duplicate number
@@ -38,8 +50,11 @@ def check_ref_namespaces():
             
         else:
             #query shotgun defined namespace + "_#"
-            correct_namespace = correct_namespace = asset.fetch('sg_default_reference_namespace') + "_" + duplicate_number[0] 
+            correct_namespace = asset.fetch('sg_default_reference_namespace') + "_" + duplicate_number[0] 
 
         #renames namespace if it is incorrect
         if current_namespace != correct_namespace: 
-            cmds.file(path, edit=1, namespace=correct_namespace)
+            new_namespace = cmds.file(path, edit=1, namespace=correct_namespace)
+            num_fixed += 1
+
+    return num_fixed
