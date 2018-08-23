@@ -13,3 +13,10 @@ imageOverlayLabel: "FPS"
 image: plugins/studiolibrary.png
 label: Studio Library
 python: import studiolibrary; studiolibrary.main()
+
+
+---
+image: fatcow/clock_edit.png
+label: Check Ref Namespaces
+entrypoint: mmmaya.references:check_ref_namespaces
+imageOverlayLabel: "CHK REF"
