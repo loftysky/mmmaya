@@ -39,8 +39,33 @@ def link_button():
         src_transform = cmds.listRelatives(src_node, parent=True, path=True)[0]
         dst_transform = cmds.listRelatives(dst_node, parent=True, path=True)[0]
 
-        transfer = cmds.transferAttributes(src_transform, dst_transform, afterReference=1, transferPositions=1, transferNormals=1, sampleSpace=4)[0]
+        # TODO: Check that src is even deforming first.
+        transfer = cmds.transferAttributes(src_transform, dst_transform,
+            afterReference=1,
+            transferPositions=1,
+            transferNormals=1,
+            sampleSpace=4, # 4 == components
+        )[0]
+
         print '   ', transfer
+
+
+    srcs = collect_by_name(sel[0], type='transform')
+    dsts = collect_by_name(sel[1], type='transform')
+
+    for name, src_node in sorted(srcs.iteritems()):
+        dst_node = dsts.get(name)
+        if not dst_node:
+            continue
+
+        print name, src_node, dst_node
+
+        # TODO: Do this with contraints.
+        for attr in ('translate', 'rotate', 'scale', 'visibility'):
+            connection = cmds.connectAttr(src_node + '.' + attr, dst_node + '.' + attr, force=True) 
+
+        print '   ', connection
+
 
 
 def unlink_button():
@@ -64,6 +89,15 @@ def unlink_button():
             print '   ', node
             cmds.delete(node)
 
-    #     for node in cmds.listConnections(mesh, type='transferAttributes') or ():
-    #         print '   ', node
-    #         cmds.delete(node)
+    for xform in cmds.listRelatives(root, allDescendents=True, fullPath=True, type='transform'):
+        print xform
+
+        for src_attr in cmds.listConnections(xform, source=True, destination=False, plugs=True) or ():
+
+            attr_name = src_attr.split('.')[-1]
+            if attr_name not in ('translate', 'rotate', 'scale', 'visibility'):
+                continue
+
+            cmds.disconnectAttr(src_attr, xform + '.' + attr_name)
+
+
