@@ -31,9 +31,9 @@ def setup_env(env, maya_version):
     if not lic_path:
         return
 
-    rman_version = os.environ.get('MM_RENDERMAN_VERSION', '21.4')
-    rms_slug = 'RenderManForMaya-%s-maya%s' % (rman_version, maya_version)
-    rps_slug = 'RenderManProServer-%s' % rman_version
+    rman_version = os.environ.get('MM_RENDERMAN_VERSION', '22.1')
+    rms_slug = 'RenderManForMaya-{}' .format(rman_version)
+    rps_slug = 'RenderManProServer-{}'.format(rman_version)
     for opt in (
         '/usr/local/mm/opt/pixar/renderman/%s' % rman_version,
         '/opt/pixar/',
@@ -58,9 +58,7 @@ def setup_env(env, maya_version):
     env['PIXAR_LICENSE_FILE'] = lic_path
 
     env.append('MAYA_PLUG_IN_PATH', os.path.join(rms_tree, 'plug-ins')) # The shared library itself.
-    env.append('MAYA_PLUG_IN_PATH', os.path.join(rms_tree, 'bin')) # Not sure if this is required.
     env.append('MAYA_SCRIPT_PATH', os.path.join(rms_tree, 'scripts')) # MEL for bootstrapping second load.
-    env.append('PYTHONPATH', os.path.join(rms_tree, 'scripts')) # I thought this would be taken care of already...
     env.append('MAYA_RENDER_DESC_PATH', os.path.join(rms_tree, 'etc')) # For `Render -r rman`.
     env.append('XBMLANGPATH', os.path.join(rms_tree, 'icons') + ('/%B' if sys.platform.startswith('linux') else '')) # For shelf icons.
 
