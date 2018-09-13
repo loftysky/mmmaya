@@ -76,6 +76,9 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-n', '--dry-run', action='store_true')
 
+    parser.add_argument('-V', '--version', type=int, default=2016,
+        help="Maya version; 2016 or 2018.")
+
     parser.add_argument('-s', '--start', type=int, required=True, help="Start frame")
     parser.add_argument('-e', '--end', type=int, required=True, help="End frame")
 
@@ -140,7 +143,15 @@ def main_farm(args):
         'farmsoup',
         'submit',
         '--name', name,
-        '--reservations', 'cpus=1,redshift=1,gpus=1',
+        '--reservations', ','.join((
+            'cpus=1',
+            'gpus=1',
+            'maya{}.install=1'.format(args.version),
+            'maya{}.license=1'.format(args.version),
+            'maya{}-redshift.install=1',format(args.version),
+            'redshift.install=1',
+            'redshift.license=1',
+        )),
         '--priority', '99', # Just to be a little higher than the normal Maya jobs.
         '--range', 'F={}-{}/{}'.format(args.start, args.end, args.chunk),
         '--shell',
