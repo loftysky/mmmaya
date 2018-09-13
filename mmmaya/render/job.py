@@ -140,15 +140,18 @@ class RenderJob(object):
             )
 
             reservations = {
-                'maya': 1,
-                'maya{}'.format(maya_version): 1,
+                'maya{}.install'.format(maya_version): 1,
+                'maya{}.license'.format(maya_version): 1,
             }
             if self.reserve_renderer and self.renderer_node not in (
                 # Don't bother reserving the built-in ones.
                 'mayaSoftware',
                 'mayaHardware2',
             ):
-                reservations[self.renderer_node] = 1
+                # These look like "arnold" and "redshift".
+                reservations['maya{}-{}.install'.format(maya_version, self.renderer_node)] = 1
+                reservations['{}.install'.format(self.renderer_node)] = 1
+                reservations['{}.license'.format(self.renderer_node)] = 1
 
         for camera, include_camera in sorted(self.cameras.items()):
             if not include_camera:
