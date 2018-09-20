@@ -20,7 +20,7 @@ setup(
             mayapy = mmmaya.launcher:main_python
             Render = mmmaya.launcher:main_render
 
-            mmmaya-redshift = mmmaya.redshift:main
+            mmmaya-redshift = mmmaya.redshift.render:main
 
         ''',
         'appinit.maya': '''
@@ -31,6 +31,8 @@ setup(
         ''',
         'mmmaya_prelaunch': '''
             mmmaya_renderman = mmmaya.renderman:setup_env
+            mmmaya_redshift = mmmaya.redshift:setup_env
+
         ''',
     },
     
