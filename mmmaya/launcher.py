@@ -99,6 +99,9 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
     parser = argparse.ArgumentParser(add_help=not (render or python))
     parser.set_defaults(background=False, python=python, render=render)
     parser.add_argument('-V', '--version', default=version)
+    parser.add_argument('-R', '--render-setup',
+        help='''"on" for new "render setup", "off" for legacy "render layers"''')
+
     parser.add_argument('--dump-environ', action='store_true')
 
     if not (render or python or deadline_batch_plugin):
@@ -120,6 +123,12 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
         command = None
 
     env = Environ(os.environ)
+
+    if args.render_setup:
+        if args.render_setup.lower()   in ('on',  '1', 'true',  'enable',  'modern', 'new', 'setup'):
+            env['MAYA_ENABLE_LEGACY_RENDER_LAYERS'] = '0'
+        elif args.render_setup.lower() in ('off', '0', 'false', 'disable', 'legacy', 'old', 'layers'):
+            env['MAYA_ENABLE_LEGACY_RENDER_LAYERS'] = '1'
 
     # Preserve the envvars for outside of the Maya environment.
     sitetools.environ.freeze(env, [
