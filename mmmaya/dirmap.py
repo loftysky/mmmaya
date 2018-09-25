@@ -19,9 +19,7 @@ def setup():
         ('U:/', '/Volumes/CGroot'),
 
         # SitG: Mike's home to studio.
-        ('/Volumes/heap/sitg/work/markmedia',      '/Volumes/CGroot/Projects/SitG'), # Old.
-        ('/Volumes/heap/sitg/work/film',           '/Volumes/CGroot/Projects/SitG'), # Current.
-        ('/Volumes/heap/sitg/work/artifacts-film', '/Volumes/CGartifacts/Projects/SitG'), # Current artifacts.
+        ('/Volumes/heap/sitg/work', '/Volumes/sitg'), # Current.
 
     ]
 
