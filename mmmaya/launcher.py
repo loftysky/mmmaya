@@ -99,6 +99,8 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
     parser = argparse.ArgumentParser(add_help=not (render or python))
     parser.set_defaults(background=False, python=python, render=render)
     parser.add_argument('-V', '--version', default=version)
+    parser.add_argument('--verbose', action='count',
+            help="Print debugging messages from the launcher.")
     parser.add_argument('-R', '--render-setup',
         help='''"on" for new "render setup", "off" for legacy "render layers"''')
 
@@ -109,6 +111,8 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
         parser.add_argument('--python', action='store_true')
         parser.add_argument('--render', action='store_true')
     args, more_args = parser.parse_known_args()
+
+    version = args.version
 
     app = next(iter_installed_apps('maya==%s' % args.version), None)
     if not app:
@@ -166,6 +170,8 @@ def main(render=False, python=False, version=os.environ.get('MMMAYA_VERSION', '2
 
     for ep in pkg_resources.iter_entry_points('mmmaya_prelaunch'):
         func = ep.load()
+        if args.verbose:
+            print >> sys.stderr, "[mmmaya.launcher] Running prelaunch: {}".format(ep)
         func(env, version)
 
     if args.dump_environ:
