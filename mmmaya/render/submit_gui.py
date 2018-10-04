@@ -7,6 +7,10 @@ from maya import cmds
 from .job import RenderJob
 
 
+# This is to track how layers should be set when we open the dialog again.
+_layerState = {}
+
+
 class SubmitDialog(Q.Widgets.Dialog):
 
     def __init__(self):
@@ -63,12 +67,16 @@ class SubmitDialog(Q.Widgets.Dialog):
 
         self._layers = []
         for layer in reversed(self._job.layer_names):
-            on = self._job.layers[layer]
+            on = _layerState.get(layer, self._job.layers[layer])
             box = Q.CheckBox(layer)
             if on:
                 box.setChecked(True)
             layers.addWidget(box)
             self._layers.append(box)
+
+            @box.stateChanged.connect
+            def boxStateChanged(state, layer=layer):
+                _layerState[layer] = state
 
         layerButtons = Q.HBoxLayout()
         layout.addRow("", layerButtons)
@@ -91,7 +99,7 @@ class SubmitDialog(Q.Widgets.Dialog):
 
         layerButtons.addStretch()
 
-        layerButton = Q.PushButton('Reset')
+        layerButton = Q.PushButton('Defaults')
         layerButton.setFixedSize(50, 18)
         @layerButton.clicked.connect
         def _onAllLayersButton(*args):
