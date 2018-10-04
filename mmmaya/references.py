@@ -16,7 +16,7 @@ def check_ref_namespaces():
     scene_references.sort(reverse=True) #sorts them in reverse
 
     paths_and_assets = []
-    assets = []
+    all_assets = []
 
     # Collect all the assets so we can fetch them all at once.
     for path in scene_references:
@@ -28,10 +28,10 @@ def check_ref_namespaces():
         asset = assets[0]
 
         paths_and_assets.append((path, asset))
-        assets.append(asset)
+        all_assets.append(asset)
 
     # Fetch them all in one call.
-    sgfs.session.fetch(assets, ['sg_default_reference_namespace'])
+    sgfs.session.fetch(all_assets, ['sg_default_reference_namespace'])
 
     # Now that we have loaded all the asset namespaces, calculate what the
     # correct namespaces are.
