@@ -70,6 +70,37 @@ class SubmitDialog(Q.Widgets.Dialog):
             layers.addWidget(box)
             self._layers.append(box)
 
+        layerButtons = Q.HBoxLayout()
+        layout.addRow("", layerButtons)
+
+        layerButton = Q.PushButton('All')
+        layerButton.setFixedSize(50, 18)
+        @layerButton.clicked.connect
+        def _onAllLayersButton(*args):
+            for layer in self._layers:
+                layer.setChecked(True)
+        layerButtons.addWidget(layerButton)
+
+        layerButton = Q.PushButton('None')
+        layerButton.setFixedSize(50, 18)
+        @layerButton.clicked.connect
+        def _onAllLayersButton(*args):
+            for layer in self._layers:
+                layer.setChecked(False)
+        layerButtons.addWidget(layerButton)
+
+        layerButtons.addStretch()
+
+        layerButton = Q.PushButton('Reset')
+        layerButton.setFixedSize(50, 18)
+        @layerButton.clicked.connect
+        def _onAllLayersButton(*args):
+            for layer in self._layers:
+                layer.setChecked(self._job.layers[layer.text()])
+        layerButtons.addWidget(layerButton)
+
+
+
         self._startFrame = Q.SpinBox(
             minimum=-1e6,
             maximum=1e6,
