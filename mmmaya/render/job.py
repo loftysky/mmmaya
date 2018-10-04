@@ -29,9 +29,15 @@ class RenderJob(object):
         self.layer_names = []
         self.layers = {}
         for layer in sorted(cmds.ls(type='renderLayer'), key=lambda l: cmds.getAttr(l + '.displayOrder')):
+
+            # Don't even bother presenting anything that is referenced.
+            if ':' in layer:
+                continue
+            
             # Use a name that matches the UI and token replacement behaviour of
             # the Render command.
             layer_name = 'masterLayer' if layer == 'defaultRenderLayer' else layer
+
             self.layer_names.append(layer_name)
             self.layers[layer_name] = cmds.getAttr(layer + '.renderable')
 
