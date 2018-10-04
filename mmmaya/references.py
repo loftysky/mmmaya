@@ -38,6 +38,7 @@ def check_ref_namespaces():
     correct_namespaces = [] # (path, correct_namespace) tuples.
     for path, asset in paths_and_assets:
 
+
         #split is to find the duplicate number
         duplicate_number = path.split("{")
         duplicate_number = duplicate_number[-1].split("}")
@@ -69,11 +70,17 @@ def check_ref_namespaces():
             current_namespace = cmds.file(path, query=1, namespace=True) 
 
             #renames namespace if it is incorrect
-            if current_namespace != correct_namespace: 
+            if current_namespace != correct_namespace:
+                print '    {} should be {} for {}'.format(current_namespace, correct_namespace, path)
                 cmds.file(path, edit=1, namespace=correct_namespace)
                 num_fixed += 1
 
-        print "Fixed {} in round {}.".format(num_fixed, round_i)
+                # Check again (just for debugging).
+                new_namespace = cmds.file(path, query=1, namespace=True)
+                if new_namespace != correct_namespace:
+                    print '        Missed! Now', new_namespace
+
+        print "Changed {} in round {}.".format(num_fixed, round_i)
 
         # Everything is fixed; bail!
         if not num_fixed:
