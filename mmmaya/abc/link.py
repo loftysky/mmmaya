@@ -5,9 +5,10 @@ def _name(path):
     return path.rsplit('|', 1)[-1].rsplit(':', 1)[-1]
 
 
-def collect_by_name(root_node, res=None, **kwargs):
+def collect_by_name(root_node, **kwargs):
 
-    res = {}
+    # Start with the root.
+    res = {_name(root_node): root_node}
 
     for node in cmds.listRelatives(root_node, allDescendents=True, fullPath=True, **kwargs):
         #print node
