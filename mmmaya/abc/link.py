@@ -74,7 +74,6 @@ def link_button():
 
         print 'transform {}: {} -> {}'.format(name, src_node, dst_node)
 
-
         is_alembiced = False
         if True:
             for node in cmds.listConnections(src_node, skipConversionNodes=True, source=True, destination=False) or ():
@@ -98,19 +97,29 @@ def link_button():
                 src_value = cmds.getAttr('{}.{}'.format(src_node, attr))
                 dst_value = cmds.getAttr('{}.{}'.format(dst_node, attr))
                 if src_value != dst_value:
-                    is_transformed = True
-                    print '    is transformed: src {} {} != dst {}'.format(attr, src_value, dst_value)
+                    if abs(src_value - dst_value) > 1e-12:
+                        is_transformed = True
+                        print '    is transformed: src {} {} != dst {}'.format(attr, src_value, dst_value)
+                    else:
+                        print '    has minor transform: src {} {} != dst {}'.format(attr, src_value, dst_value)
                     break
 
         is_group = False
-        if False:
+        has_shapes = False
+        if True:
             children = cmds.listRelatives(src_node)
             child_shapes = cmds.listRelatives(src_node, shapes=True)
-            is_group = bool(children and not child_shapes)
+
+            has_shapes = bool(child_shapes)
+            is_group = bool(children and not has_shapes)
+
             if is_group:
                 print '    is group: {} children with no shapes'.format(len(children))
+            elif has_shapes:
+                print '    has shapes: {} children with {} shapes'.format(len(children), len(child_shapes))
 
-        do_constraint = is_alembiced or is_animated or is_transformed or is_group
+        # Kevin asked to never constrain things which have shapes.
+        do_constraint = (is_alembiced or is_animated or is_transformed) and not has_shapes
 
         if do_constraint:
 
