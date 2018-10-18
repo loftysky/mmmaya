@@ -8,18 +8,17 @@ from sgfs import SGFS
 import sgpublish
 
 from maya import cmds
-
+import pymel.core as pm
 
 class RenderJob(object):
 
     def __init__(self):
 
-        self.renderer_node = cmds.getAttr('defaultRenderGlobals.currentRenderer')
-        self.renderer = cmds.renderer(self.renderer_node, q=True, rendererUIName=True)
+        self.renderer = cmds.getAttr('defaultRenderGlobals.currentRenderer')
 
         path = cmds.file(q=True, sceneName=True) or 'Untitled'
         name = os.path.splitext(os.path.basename(path))[0]
-        self.name = 'Maya Render ({}): {}'.format(self.renderer_node, name)
+        self.name = 'Maya Render ({}): {}'.format(self.renderer, name)
 
         self.camera_names = []
         self.cameras = {}
@@ -42,6 +41,19 @@ class RenderJob(object):
 
             self.layer_names.append(layer_name)
             self.layers[layer_name] = cmds.getAttr(layer + '.renderable')
+
+        self.renderers = {}
+        connections = pm.PyNode('defaultRenderGlobals.currentRenderer').listConnections(source=True, plugs=True)
+        if connections:
+            for con in connections:
+                node = str(con.node())
+                node = 'masterLayer' if node == 'defaultRenderLayer' else node # Gross.
+                if not node in self.layers:
+                    continue
+                value = con.parent().attr('value').get()
+                self.renderers[node] = value
+        else:
+            self.renderers['masterLayer'] = cmds.getAttr('defaultRenderGlobals.currentRenderer')
 
         self.start_frame = cmds.getAttr('defaultRenderGlobals.startFrame')
         self.end_frame = cmds.getAttr('defaultRenderGlobals.endFrame')
@@ -122,64 +134,17 @@ class RenderJob(object):
         maya_version = cmds.about(version=True)
         is_farmsoup = self.driver == 'farmsoup'
 
-        base_args = [
-
-            'Render',
-            '-V', maya_version,
-
-        ]
-
-        if self.renderer_node == 'redshift':
-            base_args.extend((
-                '-r', 'redshift',
-                # This must not be escaped!
-                '-gpu', '{$FARMSOUP_RESERVED_GPUS_TOKENS}'
-            ))
-        else:
-            base_args.extend((
-                # Redshift doesn't understand -fnc.
-                # Nothing really depends on this, so it isn't a big deal.
-                '-fnc', 'name.#.ext',
-            ))
-
-        base_args.extend((
-
-            '-s', '$F' if is_farmsoup else str(self.start_frame),
-            '-e', '$F_end' if is_farmsoup else str(self.end_frame),
-
-            '-x', str(int(self.width)),
-            '-y', str(int(self.height)),
-
-            '-pad', '4',
-
-        ))
-
-        if self.skip_existing:
-            base_args.extend(('-skipExistingFrames', 'true'))
-
         if is_farmsoup:
             client = farmsoup.client.Client()
             group = client.group(
                 name=self.name,
             )
 
-            reservations = {
+            base_resv = {
                 'maya{}.install'.format(maya_version): 1,
                 'maya{}.license'.format(maya_version): 1,
             }
-            if self.reserve_renderer and self.renderer_node not in (
-                # Don't bother reserving the built-in ones.
-                'mayaSoftware',
-                'mayaHardware2',
-            ):
-                # These look like "arnold" and "redshift".
-                reservations['maya{}-{}.install'.format(maya_version, self.renderer_node)] = 1
-                reservations['{}.install'.format(self.renderer_node)] = 1
-                reservations['{}.license'.format(self.renderer_node)] = 1
 
-            if self.renderer_node == 'redshift':
-                reservations['cpus'] = 1
-                reservations['gpus'] = 1
 
         for camera, include_camera in sorted(self.cameras.items()):
             if not include_camera:
@@ -187,6 +152,57 @@ class RenderJob(object):
             for layer, include_layer in sorted(self.layers.items()):
                 if not include_layer:
                     continue
+
+                renderer = self.renderers.get(layer) or self.renderers['masterLayer']
+                
+                args = [
+
+                    'Render',
+                    '-V', maya_version,
+
+                ]
+                reservations = base_resv.copy()
+
+                if self.reserve_renderer and renderer not in (
+                    # Don't bother reserving the built-in ones.
+                    'mayaSoftware',
+                    'mayaHardware2',
+                ):
+                    # These look like "arnold" and "redshift".
+                    reservations['maya{}-{}.install'.format(maya_version, renderer)] = 1
+                    reservations['{}.install'.format(renderer)] = 1
+                    reservations['{}.license'.format(renderer)] = 1
+
+                if renderer == 'redshift':
+                    args.extend((
+                        '-r', 'redshift',
+                        # This must not be escaped!
+                        '-gpu', '{$FARMSOUP_RESERVED_GPUS_TOKENS}'
+                    ))
+                    reservations['cpus'] = 1
+                    reservations['gpus'] = 1
+
+                else:
+                    args.extend((
+                        # Redshift doesn't understand -fnc.
+                        # Nothing really depends on this, so it isn't a big deal.
+                        '-fnc', 'name.#.ext',
+                    ))
+
+                args.extend((
+
+                    '-s', '$F' if is_farmsoup else str(self.start_frame),
+                    '-e', '$F_end' if is_farmsoup else str(self.end_frame),
+
+                    '-x', str(int(self.width)),
+                    '-y', str(int(self.height)),
+
+                    '-pad', '4',
+
+                ))
+
+                if self.skip_existing:
+                    args.extend(('-skipExistingFrames', 'true'))
 
                 # We need to ask Maya to do the templating for us, because
                 # otherwise it will decide that because there are multiple
@@ -203,7 +219,6 @@ class RenderJob(object):
                     camera=camera,
                 ).replace(':', '_')
 
-                args = base_args[:]
                 args.extend((
                     '-cam', camera,
                     '-rl', layer,

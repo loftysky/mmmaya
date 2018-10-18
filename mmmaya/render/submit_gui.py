@@ -33,8 +33,6 @@ class SubmitDialog(Q.Widgets.Dialog):
         layout = Q.FormLayout()
         outerLayout.addLayout(layout)
 
-        layout.addRow("Renderer:", Q.Label(self._job.renderer))
-
         self._name = Q.LineEdit(self._job.name)
         layout.addRow("Job Name:", self._name)
 
@@ -65,14 +63,15 @@ class SubmitDialog(Q.Widgets.Dialog):
         scrollWidget.setLayout(layers)
         layout.addRow("Layers:", scrollArea)
 
-        self._layers = []
+        self._layers = {}
         for layer in reversed(self._job.layer_names):
             on = _layerState.get(layer, self._job.layers[layer])
-            box = Q.CheckBox(layer)
+            renderer = self._job.renderers.get(layer) or self._job.renderers['masterLayer']
+            box = Q.CheckBox('{} ({})'.format(layer, renderer))
             if on:
                 box.setChecked(True)
             layers.addWidget(box)
-            self._layers.append(box)
+            self._layers[layer] = box
 
             @box.stateChanged.connect
             def boxStateChanged(state, layer=layer):
@@ -85,16 +84,16 @@ class SubmitDialog(Q.Widgets.Dialog):
         layerButton.setFixedSize(50, 18)
         @layerButton.clicked.connect
         def _onAllLayersButton(*args):
-            for layer in self._layers:
-                layer.setChecked(True)
+            for layerBox in self._layers.itervalues():
+                layerBox.setChecked(True)
         layerButtons.addWidget(layerButton)
 
         layerButton = Q.PushButton('None')
         layerButton.setFixedSize(50, 18)
         @layerButton.clicked.connect
         def _onAllLayersButton(*args):
-            for layer in self._layers:
-                layer.setChecked(False)
+            for layerBox in self._layers.itervalues():
+                layerBox.setChecked(False)
         layerButtons.addWidget(layerButton)
 
         layerButtons.addStretch()
@@ -103,8 +102,8 @@ class SubmitDialog(Q.Widgets.Dialog):
         layerButton.setFixedSize(50, 18)
         @layerButton.clicked.connect
         def _onAllLayersButton(*args):
-            for layer in self._layers:
-                layer.setChecked(self._job.layers[layer.text()])
+            for layer, layerBox in self._layers.iteritems():
+                layerBox.setChecked(self._job.layers[layer])
         layerButtons.addWidget(layerButton)
 
 
@@ -262,9 +261,8 @@ class SubmitDialog(Q.Widgets.Dialog):
         else:
             camera = 'NOCAMERA'
         
-        for layer in self._layers:
-            if layer.isChecked():
-                layer = layer.text()
+        for layer, layerBox in sorted(self._layers.iteritems()):
+            if layerBox.isChecked():
                 break
         else:
             layer = 'NOLAYER'
@@ -331,8 +329,8 @@ class SubmitDialog(Q.Widgets.Dialog):
         self._job.name = self._name.text()
         for camera in self._cameras:
             self._job.cameras[camera.text()] = camera.isChecked()
-        for layer in self._layers:
-            self._job.layers[layer.text()] = layer.isChecked()
+        for layer, layerBox in self._layers.iteritems():
+            self._job.layers[layer] = layerBox.isChecked()
         self._job.start_frame = self._startFrame.value()
         self._job.end_frame = self._endFrame.value()
         self._job.frame_chunk = self._frameChunk.value()
