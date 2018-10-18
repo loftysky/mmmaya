@@ -37,3 +37,6 @@ def setup_env(env, version):
     env.append('MAYA_CUSTOM_TEMPLATE_PATH', os.path.join(module_dir, 'common/scripts/NETemplates'))
     env.append('REDSHIFT_MAYAEXTENSIONSPATH', os.path.join(version_dir, 'extensions'))
     env.append('REDSHIFT_PROCEDURALSPATH', os.path.join(core_dir, 'procedurals'))
+
+    # This isn't in the .mod file, but it is handy anyways.
+    env.append('MAYA_RENDER_DESC_PATH', os.path.join(module_dir, 'common/rendererDesc')) # For `Render -r redshift`.
