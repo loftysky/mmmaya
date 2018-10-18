@@ -1,5 +1,7 @@
 import errno
 import os
+from pipes import quote as sh_quote
+
 
 import farmsoup.client
 from sgfs import SGFS
@@ -125,16 +127,32 @@ class RenderJob(object):
             'Render',
             '-V', maya_version,
 
-            '-s', '@F' if is_farmsoup else str(self.start_frame),
-            '-e', '@F_end' if is_farmsoup else str(self.end_frame),
+        ]
+
+        if self.renderer_node == 'redshift':
+            base_args.extend((
+                '-r', 'redshift',
+                # This must not be escaped!
+                '-gpu', '{$FARMSOUP_RESERVED_GPUS_TOKENS}'
+            ))
+        else:
+            base_args.extend((
+                # Redshift doesn't understand -fnc.
+                # Nothing really depends on this, so it isn't a big deal.
+                '-fnc', 'name.#.ext',
+            ))
+
+        base_args.extend((
+
+            '-s', '$F' if is_farmsoup else str(self.start_frame),
+            '-e', '$F_end' if is_farmsoup else str(self.end_frame),
 
             '-x', str(int(self.width)),
             '-y', str(int(self.height)),
 
-            '-fnc', 'name.#.ext',
             '-pad', '4',
 
-        ]
+        ))
 
         if self.skip_existing:
             base_args.extend(('-skipExistingFrames', 'true'))
@@ -158,6 +176,10 @@ class RenderJob(object):
                 reservations['maya{}-{}.install'.format(maya_version, self.renderer_node)] = 1
                 reservations['{}.install'.format(self.renderer_node)] = 1
                 reservations['{}.license'.format(self.renderer_node)] = 1
+
+            if self.renderer_node == 'redshift':
+                reservations['cpus'] = 1
+                reservations['gpus'] = 1
 
         for camera, include_camera in sorted(self.cameras.items()):
             if not include_camera:
@@ -185,16 +207,22 @@ class RenderJob(object):
                 args.extend((
                     '-cam', camera,
                     '-rl', layer,
-                    '-rd', self.output_directory,
-                    '-im', template_name,
-                    scene_path
+
+                    # We're only escaping the ones that we need to, because
+                    # Redshift relies upon the envvars to pick GPUs at
+                    # render time.
+                    '-rd', sh_quote(self.output_directory),
+                    '-im', sh_quote(template_name),
+                    sh_quote(scene_path)
                 ))
                 
+                command = ' '.join(args)
+
                 if is_farmsoup:
                     job = group.job(
                         name=display_name,
                         reservations=reservations,
-                    ).setup_as_subprocess(args)
+                    ).setup_as_subprocess(command, shell=True)
                     job.expand_via_range('F={}-{}/{}'.format(self.start_frame, self.end_frame, self.frame_chunk))
                 else:
                     print ' '.join(args)
