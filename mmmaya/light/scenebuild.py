@@ -156,10 +156,15 @@ def parse_references(scene):
     return by_namespace
 
 
-def pick_todo(available, sgfs=None):
+def pick_todo(available, sgfs=None, warnings=None):
 
     sgfs = sgfs or SGFS()
     sg = sgfs.session
+
+    def warn(x):
+        print("    WARNING: {}".format(x))
+        if warnings is not None:
+            warnings.append(x)
 
     memo = memoize.Memoizer({})
 
@@ -185,7 +190,7 @@ def pick_todo(available, sgfs=None):
             if count:
                 ideal_namespace += '_{}'.format(count)
             if namespace == ideal_namespace:
-                print("    WARNING: Namespace in scene {!r} assumed exported as {!r}.".format(used_namespace, ideal_namespace))
+                warn("Namespace in scene {!r} assumed exported as {!r}.".format(used_namespace, ideal_namespace))
                 return path
 
         raise ValueError("Could not resolve namespace {!r}.".format(namespace))
@@ -247,7 +252,7 @@ def pick_todo(available, sgfs=None):
             print('    rig_scene:', rig_scene)
 
             if rig_scene.endswith('.fbx'):
-                print('    WARNING: Skippping FBX.')
+                warn("Skippping {!r} (FBX not supported):\n        rig_scene: {}\n        abc_path: {}".format(namespace, rig_scene, abc_path))
                 continue
 
             asset = get_rig_asset(rig_scene)
@@ -255,7 +260,7 @@ def pick_todo(available, sgfs=None):
             
             # TODO: Do better.
             if asset['id'] == 1183:
-                print('    WARNING: Skipping camera.')
+                warn("Skipping {!r} (camera support not implemented):\n        abc_path: {}".format(namespace, abc_path))
                 continue
 
             model_tasks = get_asset_model_tasks(asset)
@@ -392,13 +397,27 @@ def merge(namespace, model_publish, cache_path, nodes):
 
 
 def run():
+
+    warnings = []
+
     sgfs = SGFS()
+
     available = discover_caches(sgfs=sgfs)
     print()
-    todo = pick_todo(available, sgfs=sgfs)
+
+    todo = pick_todo(available, sgfs=sgfs, warnings=warnings)
     print()
+
     for x in sorted(todo):
         merge(*x)
         print()
+
+    if warnings:
+        print("{} WARNINGS:".format(len(warnings)))
+        for i, x in enumerate(warnings):
+            print("    #{}: {}".format(i + 1, x))
+        print()
+        pm.warning("{} warnings while building scene. Open script editor for details.".format(len(warnings)))
+
 
 
