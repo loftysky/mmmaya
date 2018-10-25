@@ -5,12 +5,15 @@ def _name(path):
     return path.rsplit('|', 1)[-1].rsplit(':', 1)[-1]
 
 
-def collect_by_name(root_node, **kwargs):
+def collect_by_name(root_node, type=None):
 
     # Start with the root.
-    res = {_name(root_node): root_node}
+    if type is None or type in cmds.nodeType(root_node, inherited=True):
+        res = {_name(root_node): root_node}
+    else:
+        res = {}
 
-    for node in cmds.listRelatives(root_node, allDescendents=True, fullPath=True, **kwargs):
+    for node in cmds.listRelatives(root_node, allDescendents=True, fullPath=True, type=type):
         #print node
         res.setdefault(_name(node), node)
 
@@ -21,14 +24,15 @@ def collect_by_name(root_node, **kwargs):
 
 
 def link_button():
-
-
     sel = cmds.ls(selection=True) or ()
     if len(sel) != 2:
         cmds.error('Must have 2 objects selected.')
-        
-    srcs = collect_by_name(sel[0], type='mesh')
-    dsts = collect_by_name(sel[1], type='mesh')
+    link(*sel)
+
+def link(src_root, dst_root):
+
+    srcs = collect_by_name(src_root, type='mesh')
+    dsts = collect_by_name(dst_root, type='mesh')
 
     for name, src_node in sorted(srcs.iteritems()):
         
@@ -63,8 +67,8 @@ def link_button():
         print '    transferAttributes:', transfer
 
 
-    srcs = collect_by_name(sel[0], type='transform')
-    dsts = collect_by_name(sel[1], type='transform')
+    srcs = collect_by_name(src_root, type='transform')
+    dsts = collect_by_name(dst_root, type='transform')
 
     for name, src_node in sorted(srcs.iteritems()):
 
@@ -138,12 +142,12 @@ def link_button():
 
 
 def unlink_button():
-
     sel = cmds.ls(selection=True) or ()
     if len(sel) != 1:
         cmds.error('Must have 1 object selected.')
-    root = sel[0]
+    unlink(sel[0])
 
+def unlink(root):
 
     for mesh in cmds.listRelatives(root, allDescendents=True, fullPath=True, type='mesh'):
         

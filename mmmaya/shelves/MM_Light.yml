@@ -2,12 +2,20 @@ include: _common.yml
 
 ---
 include: _spacer.yml
-
 ---
 image: fatcow/broom.png
 label: Scrub MentalRay
 entrypoint: mmmaya.mentalray:scrub_scene
 imageOverlayLabel: "scrub\nMR"
+
+
+---
+include: _spacer.yml
+---
+image: fatcow/brick_link.png
+label: Auto-build Scene
+entrypoint: mmmaya.light.scenebuild_gui:run
+imageOverlayLabel: "build\nscene"
 
 
 ---
