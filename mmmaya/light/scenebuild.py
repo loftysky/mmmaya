@@ -84,6 +84,7 @@ def discover_caches(progress=dummy_progress, sgfs=None):
 file_command_parser = argparse.ArgumentParser()
 file_command_parser.add_argument('-dr')
 file_command_parser.add_argument('-ns')
+file_command_parser.add_argument('-op')
 file_command_parser.add_argument('-r', action='store_true')
 file_command_parser.add_argument('-rdi')
 file_command_parser.add_argument('-rfn')
@@ -121,19 +122,31 @@ def parse_references(scene):
     counts = {}
 
     with open(scene, 'rb') as fh:
+
+        buffer_ = ''
+
         for line in fh:
             
+            # Comments aren't terminated with ;.
             if line.startswith('//'):
                 continue
-            elif line.startswith('requires'):
+
+            # Build up a buffer until we have full commands.
+            buffer_ += line.rstrip()
+            if not buffer_.endswith(';'):
+                continue
+            line = buffer_[:-1]
+            buffer_ = ''
+
+            parts = line.split(None, 1)
+            if parts[0] in ('requires', 'fileInfo', 'currentUnit'):
+                continue
+
+            if parts[0] != 'file':
                 break
-            elif not line.startswith('file'):
-                raise ValueError("MayaAscii line out of order: {!r}.".format(line))
 
             argv = shlex.split(line)[1:]
-            # print(argv)
             args = file_command_parser.parse_args(argv)
-            # print(args)
 
             count = counts.get(args.path, 0)
             counts[args.path] = count + 1
@@ -183,27 +196,38 @@ def pick_todo(available, sgfs=None):
 
     # NOTE: PyMemoize is not as elegant as it could be here with these keys.
     @memo
-    def get_asset_model_task(asset):
+    def get_asset_model_tasks(asset):
         tasks = sg.find('Task', [
             ('entity', 'is', asset),
             ('step.Step.short_name', 'is', 'model'),
         ])
-        if len(tasks) != 1:
-            raise ValueError("Found {} model tasks for {}.".format(len(tasks, asset)))
-        return tasks[0]
+        if not tasks:
+            raise ValueError("Found {} model tasks for {}: {}.".format(len(tasks), asset, tasks))
+        return tasks
 
     # NOTE: PyMemoize is not as elegant as it could be here with these keys.
     @memo
     def get_model_publish(model_task):
-        return sg.find_one('PublishEvent', [
-            ('sg_link', 'is', model_task),
-            ('sg_type', 'is', 'maya_scene'),
-        ], [
-            'sg_path',
-        ],
-        order=[
-            dict(field_name='created_at', direction='desc'),
-        ])
+
+        publishes = []
+        for task in model_tasks:
+            publish = sg.find_one('PublishEvent', [
+                    ('sg_link', 'is', task),
+                    ('sg_type', 'is', 'maya_scene'),
+                ], [
+                    'sg_path',
+                ],
+                order=[
+                    dict(field_name='created_at', direction='desc'),
+                ]
+            )
+            if publish:
+                publishes.append(publish)
+
+        if len(publishes) != 1:
+            raise ValueError("Found {} latest model publishes for {}.".format(len(publishes), model_tasks))
+
+        return publishes[0]
 
     todo = []
     seen_namespaces = set()
@@ -222,13 +246,22 @@ def pick_todo(available, sgfs=None):
             rig_scene = get_reference(references, namespace)
             print('    rig_scene:', rig_scene)
 
+            if rig_scene.endswith('.fbx'):
+                print('    WARNING: Skippping FBX.')
+                continue
+
             asset = get_rig_asset(rig_scene)
             print('    asset:', asset)
             
-            model_task = get_asset_model_task(asset)
-            print('    model_task:', model_task)
+            # TODO: Do better.
+            if asset['id'] == 1183:
+                print('    WARNING: Skipping camera.')
+                continue
 
-            model_publish = get_model_publish(model_task)
+            model_tasks = get_asset_model_tasks(asset)
+            print('    model_tasks:', model_tasks)
+
+            model_publish = get_model_publish(model_tasks)
             print('    model_publish:', model_publish)
 
             todo.append((namespace, model_publish, abc_path, nodes))
