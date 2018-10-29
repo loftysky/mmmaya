@@ -153,6 +153,8 @@ def unlink(root):
         
         print cmds.nodeType(mesh), mesh
 
+        deleted_transfer = False
+
         for node in cmds.listHistory(mesh):
         
             # At some point this didn't work for us...
@@ -167,6 +169,24 @@ def unlink(root):
             print '    transferAttributes:', node
 
             cmds.delete(node)
+            deleted_transfer = True
+
+        # Try to clean up the deformed mesh too.
+        if deleted_transfer:
+            parent = cmds.listRelatives(mesh, parent=True, fullPath=True)[0]
+            original = []
+            deformed = []
+            for shape in cmds.listRelatives(parent, shapes=True, fullPath=True) or ():
+                if cmds.getAttr(shape + '.intermediateObject'):
+                    print '    original shape:', shape
+                    original.append(shape)
+                else:
+                    print '    deformed shape:', shape
+                    deformed.append(shape)
+            if len(original) == 1 and len(deformed) == 1 and deformed[0].endswith('Deformed'):
+                print '    restoring shape'
+                cmds.delete(deformed)
+                cmds.setAttr(original[0] + '.intermediateObject', False)
 
     for xform in cmds.listRelatives(root, allDescendents=True, fullPath=True, type='transform') or ():
 
