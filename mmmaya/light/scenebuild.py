@@ -224,7 +224,7 @@ def pick_todo(available, sgfs=None, warnings=None):
                     ('sg_link', 'is', task),
                     ('sg_type', 'is', 'maya_scene'),
                 ], [
-                    'sg_path',
+                    'sg_path', 'created_at', 'code',
                 ],
             )
             if publishes:
