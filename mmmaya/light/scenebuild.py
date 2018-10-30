@@ -218,25 +218,26 @@ def pick_todo(available, sgfs=None, warnings=None):
     @memo
     def get_model_publish(model_task):
 
-        publishes = []
+        all_publishes = []
         for task in model_tasks:
-            publish = sg.find_one('PublishEvent', [
+            publishes = sg.find('PublishEvent', [
                     ('sg_link', 'is', task),
                     ('sg_type', 'is', 'maya_scene'),
                 ], [
                     'sg_path',
                 ],
-                order=[
-                    dict(field_name='created_at', direction='desc'),
-                ]
             )
-            if publish:
-                publishes.append(publish)
+            if publishes:
+                # We need to prioritize "model" streams when there is more than one
+                # but we aren't sure that they will all be named.
+                priority = dict(model=1)
+                publishes.sort(key=lambda p: (priority.get(p['code'].lower()),  p['created_at']))
+                all_publishes.append(publishes[-1])
 
-        if len(publishes) != 1:
-            raise ValueError("Found {} latest model publishes for {}.".format(len(publishes), model_tasks))
+        if len(all_publishes) != 1:
+            raise ValueError("Found {} latest model publishes for {}.".format(len(all_publishes), model_tasks))
 
-        return publishes[0]
+        return all_publishes[0]
 
     todo = []
     seen_namespaces = set()
