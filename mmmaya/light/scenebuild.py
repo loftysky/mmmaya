@@ -383,7 +383,7 @@ def merge(namespace, model_publish, cache_path, nodes):
 
     model_root = find_named_node(model_nodes, 'hi')
     if not model_root:
-        raise ValueError("Could not find model's 'hi' node.")
+        raise ValueError("Could not find 'hi' node in model from {!r}.".format(model_path))
     print("    model_root:", model_root)
 
     print("    cache_path:", cache_path)
@@ -393,7 +393,7 @@ def merge(namespace, model_publish, cache_path, nodes):
     if not cache_is_current:
         cache_root = find_named_node(cache_nodes, 'hi')
         if not cache_root:
-            raise ValueError("Could not find cache's 'hi' node.")
+            raise ValueError("Could not find 'hi' node in cache from {!r}.".format(cache_path))
         print("    cache_root:", cache_root)
         unlink(model_root.longName()) # Just to be safe.
         link(cache_root.longName(), model_root.longName())
@@ -413,7 +413,10 @@ def run():
     print()
 
     for x in sorted(todo):
-        merge(*x)
+        try:
+            merge(*x)
+        except Exception as e:
+            warnings.append(e)
         print()
 
     if warnings:
