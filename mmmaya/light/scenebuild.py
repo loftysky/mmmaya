@@ -36,6 +36,10 @@ def discover_caches(progress=dummy_progress, sgfs=None):
     abc_dir = os.path.join(anim_path, 'maya', 'cache', 'alembic')
     available = []
     for name in sorted(os.listdir(abc_dir)):
+
+        if name.startswith('.') or not name.endswith('.abc'):
+            continue
+        
         abc_path = os.path.join(abc_dir, name)
 
         print(abc_path)
